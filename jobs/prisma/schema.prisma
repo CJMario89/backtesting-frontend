@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model btcusdt_12h {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_15m {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_1d {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_1h {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_1m {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_1mon {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_1w {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_2h {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_30m {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_3d {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_3m {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_4h {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_5m {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_6h {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
+
+model btcusdt_8h {
+  id                       Int    @id @default(autoincrement())
+  openTime                 String @unique @default("0")
+  open                     String @default("0")
+  high                     String @default("0")
+  low                      String @default("0")
+  close                    String @default("0")
+  volume                   String @default("0")
+  closeTime                String @default("0")
+  baseAssetVolume          String @default("0")
+  numberOfTrades           String @default("0")
+  takerBuyQuoteAssetVolume String @default("0")
+  takerBuyBaseAssetVolume  String @default("0")
+  ignore                   String @default("0")
+
+  @@index([openTime], type: Hash)
+}
