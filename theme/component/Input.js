@@ -14,9 +14,11 @@ export default defineMultiStyleConfig({
     filled: definePartsStyle(() => {
       return {
         field: {
+          fontSize: 'sm',
+          borderRadius: 'none',
           background: 'transparent',
-          border: '1px solid',
-          borderColor: 'neutral.200',
+          border: '0.1px solid',
+          borderColor: 'neutral.400',
           _focusVisible: {
             borderColor: 'neutral.100',
             boxShadow: 'none',

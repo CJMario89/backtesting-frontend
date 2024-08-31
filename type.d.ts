@@ -1,3 +1,5 @@
+import { Time } from 'lightweight-charts';
+
 export type Interval =
   | '1m'
   | '3m'
@@ -16,12 +18,12 @@ export type Interval =
   | '1mon';
 
 export type Candle = {
-  openTime: string;
-  open: string;
-  high: string;
-  low: string;
-  close: string;
-  volume: string;
+  time: Time;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 };
 
 export type getCandleDto = {
@@ -33,7 +35,7 @@ export type getCandleDto = {
 export type Indicator = {
   id: string;
   name: string;
-  params: Record<string, number | string | undefined>;
+  params: Record<string, number | boolean | string | undefined>;
 };
 
 export type Signal = {
@@ -73,6 +75,9 @@ export type Trade = {
 };
 
 export type BackTestOutput = {
+  allIndicator: Record<string, Indicator>;
+  signals: Signal[];
+  candles: Candle[];
   buySellCandlesPairs: Trade[];
   initailCaptial: number;
   capital: number;
@@ -83,4 +88,5 @@ export type BackTestOutput = {
   annualizedReturn: number;
   startTime: string;
   endTime: string;
+  timeFrame: string;
 };

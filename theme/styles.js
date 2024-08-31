@@ -1,11 +1,11 @@
 export const styles = {
   global: {
     body: {
-      bg: 'black',
+      bg: 'darkTheme.900',
       color: 'neutral.50',
     },
     '::-webkit-scrollbar': {
-      w: '2',
+      w: '1',
       h: '1',
       borderRadius: 'md',
       bgColor: 'darkTheme.900',

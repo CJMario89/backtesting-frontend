@@ -49,27 +49,17 @@ export async function GET(request: Request) {
   const start: string = query?.start;
   const end: string = query?.end;
   const params = query?.params;
-  console.log(`SELECT 
-  "openTime",
-  "open",
-  "high",
-  "low",
-  "close",
-  "volume"
-  FROM "${getTable(symbol, interval)}"
-  WHERE "openTime" >= '${start}' AND "openTime" <= '${end}';`);
 
   const data = await prisma.$queryRawUnsafe(
     `SELECT 
-  "openTime",
+  "time",
   "open",
   "high",
   "low",
   "close",
   "volume"
   FROM "${getTable(symbol, interval)}"
-  WHERE "openTime" >= '${start}' AND "openTime" <= '${end}';`,
+  WHERE "time" >= '${start}' AND "time" <= '${end}';`,
   );
-  console.log(data);
   return Response.json({ message: 'Success' });
 }

@@ -1,4 +1,3 @@
-import { extendTheme } from '@chakra-ui/react';
 import {
   Button,
   Heading,
@@ -13,6 +12,7 @@ import {
 } from './component';
 import { styles } from './styles';
 import { fontMap } from './component/Fonts';
+import { extendTheme } from '@chakra-ui/react';
 
 const getTheme = (locale) =>
   extendTheme({
@@ -45,28 +45,28 @@ const getTheme = (locale) =>
     },
     colors: {
       neutral: {
-        50: '#FCFAFC',
-        100: '#EDECED',
-        200: '#DEDCDE',
-        300: '#C0C6C9',
-        400: '#A6A4A6',
-        500: '#747274',
-        600: '#4E494E',
-        700: '#333133',
-        800: '#262326',
-        900: '#211821',
+        50: '#FAFAFC',
+        100: '#ECECED',
+        200: '#DCDCDE',
+        300: '#C6C6C9',
+        400: '#A4A4A6',
+        500: '#727274',
+        600: '#49494E',
+        700: '#313133',
+        800: '#232326',
+        900: '#181821',
       },
       darkTheme: {
-        50: '#3C363C',
-        100: '#393339',
-        200: '#363136',
-        300: '#322F32',
-        400: '#2F2A2F',
-        500: '#2C252C',
-        600: '#2A222A',
-        700: '#261F26',
-        800: '#211421',
-        900: '#161116',
+        50: '#36363C',
+        100: '#333339',
+        200: '#313136',
+        300: '#2F2F32',
+        400: '#2A2A2F',
+        500: '#25252C',
+        600: '#22222A',
+        700: '#1F1F26',
+        800: '#17171c',
+        900: '#111116',
       },
       primary: {
         50: '#FDDAE5',

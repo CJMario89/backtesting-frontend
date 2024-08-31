@@ -1,5 +1,19 @@
-import { Box, Flex, Heading, useRadioGroup } from '@chakra-ui/react';
-import { useEffect, useRef, useState } from 'react';
+import {
+  Box,
+  Divider,
+  Flex,
+  Heading,
+  Tooltip,
+  useRadioGroup,
+} from '@chakra-ui/react';
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   CandlestickData,
@@ -18,7 +32,7 @@ import {
 import useGetCandles from ' /hooks/use-get-candles';
 import { useIndicatorStore } from '../store/indicator-store';
 import { RadioToggle } from ' /components/common';
-import { getIndicatorData, SupportedIndicators } from ' /service/indicator';
+import { getIndicatorData } from ' /application/indicator';
 
 // eslint-disable-next-line no-undef
 let timer: NodeJS.Timeout | null = null;
@@ -32,7 +46,6 @@ let candleSeries: ISeriesApi<
 let chart: IChartApi;
 let flag = false;
 let init = false;
-let interval = '1m';
 
 let seriesArr: ISeriesApi<SeriesType>[] = [];
 
@@ -54,18 +67,28 @@ const minutesTimeFormatOptions: FormatOptions = {
   minute: 'numeric',
 };
 
-const timeFormatOptions: Record<string, FormatOptions> = {
+export const timeFormatOptions: Record<string, FormatOptions> = {
   '1m': minutesTimeFormatOptions,
   '5m': minutesTimeFormatOptions,
   '1h': dayTimeFormatOptions,
   '4h': monthTimeFormatOptions,
+  '1d': monthTimeFormatOptions,
+  '3d': monthTimeFormatOptions,
   '1w': monthTimeFormatOptions,
 };
 
-const Chart = ({ symbol }: { symbol: string }) => {
+const Chart = ({
+  symbol,
+  timeframe,
+  setTimeframe,
+}: {
+  symbol: string;
+  timeframe: string;
+  setTimeframe: Dispatch<SetStateAction<string>>;
+}) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const { indicators } = useIndicatorStore();
-
+  const { allIndicator } = useIndicatorStore();
+  const indicatorsArr = Object.values(allIndicator);
   const options = Object.keys(timeFormatOptions).map((key) => ({
     value: key,
     label: key,
@@ -73,23 +96,49 @@ const Chart = ({ symbol }: { symbol: string }) => {
 
   const [page, setPage] = useState<number>(1);
 
+  const timeframeIndicator = useMemo(() => {
+    return indicatorsArr.find((indicator) => indicator.timeframe);
+  }, [indicatorsArr]);
+  //
+  //
+  //
+  // radio group
   const radioGroupProps = useRadioGroup({
-    defaultValue: options[0].value,
-    onChange: () => {
+    defaultValue: timeframe,
+    onChange: (value: string) => {
+      if (
+        timeframeIndicator?.timeframe &&
+        !(timeframeIndicator.timeframe === value)
+      )
+        return;
       setPage(1); //after onchange, reset page to 1 but setpage is too slow
+      setTimeframe(value);
     },
-  });
-  interval = radioGroupProps.value as string;
-  const { data } = useGetCandles({
-    symbol,
-    interval,
-    page,
   });
 
   useEffect(() => {
-    const indicatorsArr = Object.values(indicators);
+    if (!timeframeIndicator?.timeframe) return;
+    radioGroupProps.onChange(timeframeIndicator?.timeframe);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeframeIndicator, radioGroupProps.value]);
+  //
+  //
+  //
+  // get candles
+  const { data } = useGetCandles({
+    symbol,
+    interval:
+      timeframeIndicator?.timeframe ?? (radioGroupProps.value as string),
+    page,
+  });
+  //
+  //
+  //
+  // render chart indicators
+  useEffect(() => {
     if (!data?.candles) return;
     if (!chart) return;
+    console.log('candle', data?.candles);
     if (Array.isArray(seriesArr) && seriesArr.length > 0) {
       while (seriesArr.length > 0) {
         chart.removeSeries(seriesArr[0]);
@@ -97,41 +146,46 @@ const Chart = ({ symbol }: { symbol: string }) => {
       }
     }
     if (!(Array.isArray(indicatorsArr) && indicatorsArr.length > 0)) return;
+
     let positionOffset = 0;
     let positioned: string[] = [];
     indicatorsArr
+      .flatMap((indicator) => indicator.indicators)
       .filter(({ isShowInChart }) => isShowInChart)
       .forEach((indicator) => {
-        console.log(indicator);
         const { name, params, color } = indicator;
-        let series: ISeriesApi<SeriesType> | undefined;
-        series = chart.addLineSeries({
-          color: 'rgba(255, 144, 0, 1)',
-          priceScaleId: name,
-          lineWidth: 1,
-          priceLineVisible: false,
+
+        //three return in macd indicator
+        const indicatorData = getIndicatorData({
+          candles: data?.candles,
+          params,
+          color: color || '#000',
+          indicator: name,
         });
-        series.setData(
-          getIndicatorData({
-            candles: data?.candles,
-            period: Number(params?.period),
-            color: color || '#000',
-            indicator: name as SupportedIndicators,
-          }),
-        );
-        seriesArr.push(series);
-        if (name === 'sma' || name === 'ema') {
+        Object.entries(indicatorData).forEach(([key, value]) => {
+          let series: ISeriesApi<SeriesType> | undefined;
+          if (key === 'histogram') {
+            series = chart.addHistogramSeries({
+              priceScaleId: name,
+              priceLineVisible: false,
+            });
+            series.setData(value);
+          } else {
+            series = chart.addLineSeries({
+              priceScaleId: params.isPriceRelated ? 'right' : name,
+              lineWidth: 1,
+              priceLineVisible: false,
+            });
+            series.setData(value);
+          }
+          seriesArr.push(series);
+        });
+
+        if (!positioned.includes(name) && !params.isPriceRelated) {
           chart.priceScale(name).applyOptions({
             scaleMargins: {
-              top: 0.1,
-              bottom: 0.5,
-            },
-          });
-        } else if (!positioned.includes(name)) {
-          chart.priceScale(name).applyOptions({
-            scaleMargins: {
-              top: 0.9 - 0.1 * positionOffset,
-              bottom: 0.1 * positionOffset,
+              top: 0.78 - 0.1 * positionOffset,
+              bottom: 0.12 * positionOffset + 0.1,
             },
           });
           positioned.push(name);
@@ -139,19 +193,33 @@ const Chart = ({ symbol }: { symbol: string }) => {
         }
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [indicators, data?.candles]);
-
+  }, [allIndicator, data?.candles]);
+  //
+  //
+  //
+  // render chart candles
   useEffect(() => {
     if (!data?.candles) return;
+    if (!data?.candles.length) return;
     if (!candleSeries) return;
     candleSeries.setData(data?.candles);
-    flag = true;
+    if (!data.isEnd) {
+      flag = true;
+    }
     if (page === 1) {
-      // chart.timeScale().fitContent();
+      chart
+        .timeScale()
+        .scrollToPosition(
+          Number(data.candles[data.candles.length - 1].time),
+          false,
+        );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
-
+  //
+  //
+  //
+  // render chart
   useEffect(() => {
     if (!chartContainerRef.current) return;
     if (!setPage) return;
@@ -164,31 +232,30 @@ const Chart = ({ symbol }: { symbol: string }) => {
         height: chartContainerRef.current.clientHeight - 32,
         layout: {
           background: {
-            color: '#000000',
+            color: '#17171c',
           },
-          textColor: 'rgba(255, 255, 255, 0.9)',
+          textColor: '#727274',
         },
         grid: {
           vertLines: {
-            color: 'rgba(197, 203, 206, 0.5)',
+            color: '#49494E',
           },
           horzLines: {
-            color: 'rgba(197, 203, 206, 0.5)',
+            color: '#49494E',
           },
         },
         crosshair: {
           mode: CrosshairMode.Magnet,
         },
         rightPriceScale: {
-          borderColor: 'rgba(197, 203, 206, 0.8)',
-          mode: 1,
           scaleMargins: {
-            top: 0.1,
-            bottom: 0.5,
+            top: 0.05,
+            bottom: 0.4,
           },
         },
         timeScale: {
-          borderColor: 'rgba(197, 203, 206, 0.8)',
+          // borderColor: 'rgba(197, 203, 206, 0.8)',
+          barSpacing: 10,
         },
       },
     );
@@ -197,23 +264,16 @@ const Chart = ({ symbol }: { symbol: string }) => {
         tickMarkFormatter: (time: number) => {
           return new Intl.DateTimeFormat('en-US', {
             timeZone: 'UTC',
-            ...timeFormatOptions[interval],
+            ...timeFormatOptions[radioGroupProps.value as string],
           }).format(time * 1000);
         },
+        fixRightEdge: true,
+        lockVisibleTimeRangeOnResize: true,
       },
     });
-
-    candleSeries = chart.addCandlestickSeries({
-      // upColor: 'rgba(255, 144, 0, 1)',
-      // downColor: '#000',
-      // borderDownColor: 'rgba(255, 144, 0, 1)',
-      // borderUpColor: 'rgba(255, 144, 0, 1)',
-      // wickDownColor: 'rgba(255, 144, 0, 1)',
-      // wickUpColor: 'rgba(255, 144, 0, 1)',
-    });
-
+    candleSeries = chart.addCandlestickSeries({});
     const timeScale = chart.timeScale();
-    // timeScale.fitContent();
+
     timeScale.subscribeVisibleLogicalRangeChange(() => {
       if (timer !== null) {
         return;
@@ -242,7 +302,7 @@ const Chart = ({ symbol }: { symbol: string }) => {
         width: chartContainerRef.current.clientWidth - 32,
         height: chartContainerRef.current.clientHeight - 32,
       });
-      chart.timeScale().fitContent();
+      // chart.timeScale().fitContent();
     };
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -256,24 +316,73 @@ const Chart = ({ symbol }: { symbol: string }) => {
     resizeObserver.observe(chartContainerRef.current);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chartContainerRef.current]);
+  }, [chartContainerRef.current, data]);
+  //
+  //
+  //
+  // // render trade markers
+  // useEffect(() => {
+  //   if (!chart) return;
+  //   if (!backTestResult.buySellCandlesPairs) return;
+  //   if (backTestResult.timeFrame !== timeframe) {
+  //     removeBackTestResult();
+  //     candleSeries.setMarkers([]);
+  //     return;
+  //   }
+  //   const trades = backTestResult.buySellCandlesPairs;
+  //   if (trades.length === 0) return;
+  //   const tradeMarkers = trades
+  //     .flatMap((trade, i) => {
+  //       return [
+  //         {
+  //           time: Number(trade.buy.time) / 1000,
+  //           position: 'belowBar',
+  //           color: 'green',
+  //           shape: 'arrowUp',
+  //           text: 'Buy@' + i,
+  //         },
+  //         {
+  //           time: Number(trade.sell.time) / 1000,
+  //           position: 'aboveBar',
+  //           color: 'red',
+  //           shape: 'arrowDown',
+  //           text: 'Sell@' + i,
+  //         },
+  //       ] as SeriesMarker<Time>[];
+  //     })
+  //     .sort((a, b) => (Number(a.time) - Number(b.time) > 0 ? 1 : -1));
+  //   candleSeries.setMarkers(tradeMarkers);
+  //   //data may not be ready
+  //   chart.timeScale().scrollToPosition(Number(trades[0].buy.time) / 1000, true);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [backTestResult, timeframe]);
 
   return (
-    <Flex flexDirection="column" gap="4" flex="1">
-      <Heading as="h2">Chart</Heading>
+    <Flex flexDirection="column" gap="2" flex="1" p="2" bg="darkTheme.800">
+      <Heading as="h4">Chart</Heading>
+      <Divider />
       <Flex>
-        <RadioToggle variant="text" options={options} {...radioGroupProps} />
+        <Tooltip
+          isDisabled={!timeframeIndicator?.timeframe}
+          shouldWrapChildren={true}
+          label={`${timeframeIndicator?.name} only support on ${timeframeIndicator?.timeframe} timeframe`}
+        >
+          <RadioToggle
+            variant="text"
+            options={options}
+            {...radioGroupProps}
+            isDisabled={!!timeframeIndicator?.timeframe}
+            cursor={!timeframeIndicator?.timeframe ? 'pointer' : 'not-allowed'}
+          />
+        </Tooltip>
       </Flex>
       <Box
         w="full"
         minW="300px"
         ref={chartContainerRef}
         position="relative"
-        borderRadius="md"
-        border="1px solid"
-        borderColor="neutral.50"
         p="4"
-        h="500px"
+        h="600px"
         // h="50vh"
         minH="400px"
       >

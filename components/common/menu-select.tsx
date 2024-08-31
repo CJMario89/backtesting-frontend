@@ -106,12 +106,7 @@ const MenuSelect = ({
           </Button>
           <Drawer placement="bottom" onClose={onClose} isOpen={isOpen}>
             <DrawerOverlay backdropFilter="blur(0px)" />
-            <DrawerContent
-              borderTop="1px solid"
-              borderColor="neutral.50"
-              borderTopRightRadius="md"
-              borderTopLeftRadius="md"
-            >
+            <DrawerContent borderTop="0.1px solid" borderColor="neutral.50">
               <DrawerCloseButton
                 right="2"
                 top={typeof renderDrawerHeader === 'function' ? '4' : '2'}
@@ -167,6 +162,7 @@ const MenuSelect = ({
             </MenuButton>
             <MenuList
               bg="darkTheme.800"
+              zIndex={2}
               display={{
                 base: menuDrawerEnabled ? 'none' : 'block',
                 md: 'block',
@@ -189,9 +185,10 @@ const MenuSelect = ({
                   return (
                     <MenuItemOption
                       bg="darkTheme.800"
+                      fontSize="sm"
                       _hover={{ bg: 'darkTheme.700' }}
-                      key={option.value.toString()}
-                      value={option.value.toString()}
+                      key={option.value?.toString()}
+                      value={option.value?.toString()}
                       icon={<IconCheck />}
                       flexDirection="row-reverse"
                       sx={{

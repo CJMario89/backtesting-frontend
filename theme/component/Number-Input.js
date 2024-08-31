@@ -15,9 +15,9 @@ export default defineMultiStyleConfig({
     filled: definePartsStyle(() => {
       return {
         field: {
-          borderRadius: 'md',
-          borderWidth: '1px',
-          borderColor: 'neutral.400',
+          borderRadius: 'none',
+          borderWidth: '0.1px',
+          borderColor: 'neutral.500',
           background: 'darkTheme.700',
           _hover: {
             background: 'darkTheme.600',

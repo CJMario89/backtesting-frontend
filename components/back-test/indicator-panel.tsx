@@ -1,17 +1,20 @@
 import {
-  Drawer,
-  DrawerBody,
-  DrawerCloseButton,
-  DrawerContent,
-  DrawerOverlay,
+  Divider,
   Flex,
   Heading,
   IconButton,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalOverlay,
   UseDisclosureProps,
 } from '@chakra-ui/react';
 import IconAdd from '../icon/add';
 import { useIndicatorStore } from './store/indicator-store';
-import { supoortedIndicators } from ' /constants';
+import { indicators } from ' /components/back-test/store/constants';
+import { useEffect } from 'react';
+import { defaultAllIndicators } from './store/default-indicators';
 
 const IndicatorPanel = ({
   indicatorPanelDisclosure: { onClose = () => {}, isOpen = false },
@@ -20,54 +23,58 @@ const IndicatorPanel = ({
 }) => {
   const { addIndicator } = useIndicatorStore();
 
+  useEffect(() => {
+    const isInited = localStorage.getItem('init-indicators');
+    if (!isInited) {
+      defaultAllIndicators.forEach((indicator) => {
+        addIndicator(indicator);
+      });
+      localStorage.setItem('init-indicators', 'true');
+    }
+  }, []);
+
   return (
-    <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
-      <DrawerOverlay />
-      <DrawerContent p="2" bgColor="darkTheme.900">
-        <DrawerCloseButton />
-        <DrawerBody p="0">
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalOverlay />
+      <ModalContent p="8" bgColor="darkTheme.900">
+        <ModalCloseButton />
+        <ModalBody p="0">
           <Flex w="full" flex="1" gap="6" flexDirection="column">
-            <Heading as="h2">Indicators</Heading>
-            <Flex flexDirection="column" gap="2">
-              {Object.entries(supoortedIndicators).map(
-                ([indicator, params]) => {
-                  const onClick = () => {
-                    addIndicator({
-                      name: indicator,
-                      params,
-                      displayName: `${indicator}${params?.period ? ` ${params?.period}` : ''} `,
-                    });
-                    onClose();
-                  };
-                  return (
-                    <Flex
-                      key={indicator}
-                      alignItems="center"
-                      justifyContent="space-between"
-                      p="2"
-                      borderRadius="md"
-                      // onClick={onClick}
-                      // cursor="pointer"
-                      // _hover={{
-                      //   bgColor: 'darkTheme.500',
-                      // }}
-                    >
-                      <Heading as="h4">{indicator}</Heading>
-                      <IconButton
-                        aria-label=""
-                        variant="ghost"
-                        icon={<IconAdd w="4" h="4" />}
-                        onClick={onClick}
-                      />
-                    </Flex>
-                  );
-                },
-              )}
+            <Heading as="h3">Indicators</Heading>
+            <Divider />
+            <Flex flexDirection="column" gap="8">
+              {indicators.map((indicator) => {
+                const onClick = () => {
+                  addIndicator(indicator);
+                  onClose();
+                };
+                return (
+                  <Flex
+                    key={indicator.name}
+                    alignItems="center"
+                    justifyContent="space-between"
+                    borderRadius="md"
+                    // onClick={onClick}
+                    // cursor="pointer"
+                    // _hover={{
+                    //   bgColor: 'darkTheme.500',
+                    // }}
+                  >
+                    <Heading as="h6">{indicator.name}</Heading>
+                    <IconButton
+                      aria-label="add indicator"
+                      variant="ghost"
+                      icon={<IconAdd w="4" h="4" />}
+                      onClick={onClick}
+                    />
+                  </Flex>
+                );
+              })}
             </Flex>
           </Flex>
-        </DrawerBody>
-      </DrawerContent>
-    </Drawer>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   );
 };
 

@@ -3,16 +3,20 @@ import {
   useBackTestStore,
 } from ' /components/back-test/store/back-test-store';
 import { useIndicatorStore } from ' /components/back-test/store/indicator-store';
-import { Indicator } from ' /components/back-test/store/indicator.type';
+import { IndicatorExtended } from ' /components/back-test/store/indicator.type';
 import { postBackTest } from ' /service/back-test';
 import { useMutation } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
+import getCurrentIndicatorFromSignal from './get-current-indicator-from-signal';
 
 const usePostBackTest = ({
   symbol,
   interval,
   start,
   end,
+  capital,
+  takeProfit,
+  stopLoss,
   signals,
   ...options
 }: {
@@ -20,28 +24,31 @@ const usePostBackTest = ({
   interval: string;
   start: string;
   end: string;
+  capital: number;
+  takeProfit?: number;
+  stopLoss?: number;
   signals: BackTestSignal[];
   options?: Record<string, string>;
 }) => {
-  const { indicators } = useIndicatorStore();
+  const { allIndicator } = useIndicatorStore();
   const { addBackTestResult } = useBackTestStore();
-  const { buySignals, sellSignals } = convertSignals(signals, indicators);
-  console.log(buySignals);
-  console.log(sellSignals);
   return useMutation({
     mutationFn: async () => {
+      const { buySignals, sellSignals } = convertSignals(signals, allIndicator);
+
       const response = await postBackTest({
         symbol,
         interval,
         start,
         end,
+        capital,
+        takeProfit,
+        stopLoss,
         buySignals,
         sellSignals,
       });
       const result = await response.json();
-      console.log('result');
-      console.log(result);
-      addBackTestResult(result);
+      addBackTestResult({ ...result, allIndicator, signals });
     },
     ...options,
   });
@@ -49,9 +56,9 @@ const usePostBackTest = ({
 
 function convertSignals(
   signals: BackTestSignal[],
-  indicators: Record<string, Indicator>,
+  allIndicator: Record<string, IndicatorExtended>,
 ) {
-  const rawSignals = convertSetting(signals, indicators);
+  const rawSignals = convertSetting(signals, allIndicator);
   const rawBuySignals =
     rawSignals.filter((signal) => signal.action === 'buy') ?? [];
   const buySignals = [];
@@ -92,14 +99,18 @@ function convertSignals(
 
 function convertSetting(
   signals: BackTestSignal[],
-  indicators: Record<string, Indicator>,
+  allIndicator: Record<string, IndicatorExtended>,
 ) {
   // previous, max, min, indicatorId,
   const rawSignals = signals.map((signal) => {
+    const { baseIndicator } = getCurrentIndicatorFromSignal({
+      signal,
+      allIndicator,
+    });
     const valueMap: any = {
       previous: 'previous',
-      max: indicators[signal.indicatorId]?.params?.max,
-      min: indicators[signal.indicatorId]?.params?.min,
+      max: baseIndicator?.params.max,
+      min: baseIndicator?.params.min,
     };
     const upperBound = {
       id: uuidv4(),
@@ -107,8 +118,11 @@ function convertSetting(
       value:
         signal.upperBound.value ??
         valueMap[signal.upperBound.name] ??
-        indicators[signal.upperBound.name] ??
-        indicators[signal.indicatorId]?.params?.max ??
+        allIndicator[signal.upperBound?.indicatorId ?? '']?.indicators.find(
+          (baseIndicator) =>
+            baseIndicator.baseId === signal.upperBound?.baseIndicatorId,
+        ) ?? // indicator id
+        baseIndicator?.params?.max ??
         100,
     };
     const lowerBound = {
@@ -117,15 +131,22 @@ function convertSetting(
       value:
         signal.lowerBound.value ??
         valueMap[signal.lowerBound.name] ??
-        indicators[signal.lowerBound.name] ??
-        indicators[signal.indicatorId]?.params?.min ??
+        allIndicator[signal.lowerBound?.indicatorId ?? '']?.indicators.find(
+          (baseIndicator) =>
+            baseIndicator.baseId === signal.lowerBound?.baseIndicatorId,
+        ) ?? // indicator id
+        baseIndicator?.params?.min ??
         0,
     };
+    const id = uuidv4();
     return {
-      ...signal,
+      // return back end structure
+      id,
+      indicator: { ...baseIndicator, id, baseId: id },
+      action: signal.action,
+      logicOperator: signal.logicOperator,
       upperBound,
       lowerBound,
-      id: uuidv4(),
     };
   });
   return rawSignals;

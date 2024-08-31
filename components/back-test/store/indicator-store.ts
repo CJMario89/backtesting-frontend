@@ -1,20 +1,32 @@
 /* eslint-disable no-unused-vars */
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { Indicator } from './indicator.type';
+import {
+  Indicator,
+  IndicatorExtended,
+  IndicatorParams,
+} from './indicator.type';
+
+import { v4 as uuid } from 'uuid';
+import { colorFixedArr } from './constants';
 
 export type AddIndicator = (indicator: Indicator) => void;
 export type SetIndicatorParams = (params: {
   id: string;
-  params: Record<string, string>;
+  baseId: string;
+  params: IndicatorParams;
 }) => void;
 export type RemoveIndicator = (params: { id: string }) => void;
-export type ToggleChart = (params: { id: string }) => void;
+export type ToggleChart = (params: { id: string; baseId: string }) => void;
 
-export type SetIndicatorColor = (params: { id: string; color: string }) => void;
+export type SetIndicatorColor = (params: {
+  id: string;
+  baseId: string;
+  color: string;
+}) => void;
 
 interface IndicatorStore {
-  indicators: Record<string, Indicator>;
+  allIndicator: Record<string, IndicatorExtended>;
   addIndicator: AddIndicator;
   setIndicatorParams: SetIndicatorParams;
   removeIndicator: RemoveIndicator;
@@ -26,88 +38,141 @@ export const useIndicatorStore = create<IndicatorStore>()(
   devtools(
     persist(
       (set) => ({
-        indicators: {} as Record<string, Indicator>,
+        allIndicator: {} as Record<string, IndicatorExtended>,
         addIndicator: (indicator) => {
-          const id = new Date().getTime().toString();
-          return set((state: IndicatorStore) => {
-            const indicators: Record<string, Indicator> = {
-              ...state.indicators,
+          const id = indicator.name === 'volume' ? 'volume' : uuid();
+          return set((state) => {
+            const allIndicator: Record<string, IndicatorExtended> = {
+              ...state.allIndicator,
               [id]: {
                 ...indicator,
-                isShowInChart: true,
-                color: '#BB6611',
-                id,
+                name: indicator.name,
+                indicators: indicator.indicators.map((baseIndicator) => ({
+                  displayName: `${baseIndicator.name}${
+                    baseIndicator.params?.period
+                      ? ` ${baseIndicator.params?.period}`
+                      : ''
+                  } `,
+                  ...baseIndicator,
+                  id,
+                  baseId: indicator.name === 'volume' ? 'volume' : uuid(),
+                  name: baseIndicator.name,
+                  isShowInChart: true,
+                  color: '#ffaa50',
+                  ...(colorFixedArr.includes(indicator.name)
+                    ? { isColorFixed: true }
+                    : {}),
+                })),
               },
             };
             return {
               ...state,
-              indicators,
+              allIndicator,
             };
           });
         },
         setIndicatorParams: ({
           id,
+          baseId,
           params,
         }: {
           id: string;
-          params: Record<string, string>;
+          baseId: string;
+          params: IndicatorParams;
         }) => {
           return set((state) => {
-            const indicators = {
-              ...state.indicators,
+            const allIndicator: Record<string, IndicatorExtended> = {
+              ...state.allIndicator,
               [id]: {
-                ...state.indicators[id],
-                params: {
-                  ...params,
-                },
-                displayName: `${state.indicators[id].name}${params?.period ? ` ${params?.period}` : ''} `,
+                ...state.allIndicator[id],
+                indicators: state.allIndicator[id].indicators.map(
+                  (indicator) => {
+                    if (indicator.baseId === baseId) {
+                      return {
+                        ...indicator,
+                        params,
+                        displayName: `${state.allIndicator[id].name}${params?.period ? ` ${params?.period}` : ''} `,
+                      };
+                    } else {
+                      return indicator;
+                    }
+                  },
+                ),
               },
             };
             return {
               ...state,
-              indicators,
+              allIndicator,
             };
           });
         },
-        setIndicatorColor: ({ id, color }: { id: string; color: string }) => {
+        setIndicatorColor: ({
+          id,
+          baseId,
+          color,
+        }: {
+          id: string;
+          baseId: string;
+          color: string;
+        }) => {
           return set((state) => {
-            const indicators = {
-              ...state.indicators,
+            const allIndicator = {
+              ...state.allIndicator,
               [id]: {
-                ...state.indicators[id],
-                color,
+                ...state.allIndicator[id],
+                indicators: state.allIndicator[id].indicators.map(
+                  (indicator) => {
+                    if (indicator.baseId === baseId) {
+                      return {
+                        ...indicator,
+                        color,
+                      };
+                    } else {
+                      return indicator;
+                    }
+                  },
+                ),
               },
             };
             return {
               ...state,
-              indicators,
+              allIndicator,
             };
           });
         },
         removeIndicator: ({ id }: { id: string }) => {
           return set((state) => {
-            const indicators = { ...state.indicators };
-            delete indicators[id];
+            const allIndicator = { ...state.allIndicator };
+            delete allIndicator[id];
             return {
               ...state,
-              indicators,
+              allIndicator,
             };
           });
         },
-        toggleChart: ({ id }: { id: string }) => {
+        toggleChart: ({ id, baseId }: { id: string; baseId: string }) => {
           return set((state) => {
-            const indicators = {
-              ...state.indicators,
+            const allIndicator = {
+              ...state.allIndicator,
               [id]: {
-                ...state.indicators[id],
-                isShowInChart: state.indicators[id].isShowInChart
-                  ? false
-                  : true,
+                ...state.allIndicator[id],
+                indicators: state.allIndicator[id].indicators.map(
+                  (indicator) => {
+                    if (indicator.baseId === baseId) {
+                      return {
+                        ...indicator,
+                        isShowInChart: indicator.isShowInChart ? false : true,
+                      };
+                    } else {
+                      return indicator;
+                    }
+                  },
+                ),
               },
             };
             return {
               ...state,
-              indicators,
+              allIndicator,
             };
           });
         },

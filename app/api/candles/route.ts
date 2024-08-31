@@ -55,7 +55,7 @@ async function getBTCUSDTCandles(interval: string, page: string) {
     take: candleNumber,
     skip: (Number(page) - 1) * candleNumber,
     select: {
-      openTime: true,
+      time: true,
       open: true,
       high: true,
       low: true,
@@ -68,97 +68,97 @@ async function getBTCUSDTCandles(interval: string, page: string) {
     case '1m':
       data = await prisma.btcusdt_1m.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '3m':
       data = await prisma.btcusdt_3m.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '5m':
       data = await prisma.btcusdt_5m.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '15m':
       data = await prisma.btcusdt_15m.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '30m':
       data = await prisma.btcusdt_30m.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '1h':
       data = await prisma.btcusdt_1h.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '2h':
       data = await prisma.btcusdt_2h.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '4h':
       data = await prisma.btcusdt_4h.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '6h':
       data = await prisma.btcusdt_6h.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '8h':
       data = await prisma.btcusdt_8h.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '12h':
       data = await prisma.btcusdt_12h.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '1d':
       data = await prisma.btcusdt_1d.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '3d':
       data = await prisma.btcusdt_3d.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '1w':
       data = await prisma.btcusdt_1w.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
     case '1M':
       data = await prisma.btcusdt_1mon.findMany({
         ...query,
-        orderBy: { openTime: 'desc' },
+        orderBy: { time: 'desc' },
       });
       break;
   }
   return data.map((candle) => {
     return {
-      time: Number(candle.openTime) / 1000,
+      time: Number(candle.time) / 1000,
       open: Number(candle.open),
       high: Number(candle.high),
       low: Number(candle.low),

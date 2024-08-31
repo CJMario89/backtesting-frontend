@@ -3,6 +3,7 @@ import {
   Box,
   Center,
   Input,
+  RadioProps,
   SimpleGrid,
   SimpleGridProps,
   Text,
@@ -37,15 +38,14 @@ const Radio = ({ label, textProps = {}, ...radioProps }: OptionProps) => {
 
   const isSelected = state.isChecked;
   return (
-    <chakra.label cursor="pointer" zIndex="2">
+    <chakra.label cursor={radioProps.cursor} zIndex="2" bg="darkTheme.900">
       <Input {...getInputProps()} />
       <Center
         position="relative"
-        py={'7px'}
-        px={'3'}
-        borderRadius="md"
+        py="1"
+        px="3"
         _hover={{
-          bgColor: isSelected ? 'darkTheme.400' : 'darkTheme.800',
+          bgColor: isSelected ? 'darkTheme.400' : 'darkTheme.900',
         }}
         {...getRadioProps()}
       >
@@ -54,13 +54,11 @@ const Radio = ({ label, textProps = {}, ...radioProps }: OptionProps) => {
           h="full"
           zIndex="-1"
           position="absolute"
-          borderRadius="md"
           bgColor={isSelected ? 'darkTheme.500' : 'darkTheme.900'}
           transition={transition}
         />
         <Text
           fontSize="sm"
-          fontWeight="semibold"
           color={isSelected ? 'neutral.50' : 'neutral.100'}
           transition={transition}
           {...textProps}
@@ -79,7 +77,8 @@ const RadioToggle = ({
   getRadioProps,
   textProps,
   containerProps,
-}: RadioToggleProps) => {
+  ...radioProps
+}: RadioToggleProps | RadioProps) => {
   return (
     <SimpleGrid
       columns={options?.length}
@@ -88,6 +87,7 @@ const RadioToggle = ({
       bg="darkTheme.900"
       {...containerProps}
       {...getRootProps()}
+      // cursor={radioProps.isDisabled ? 'not-allowed' : 'pointer'}
     >
       {options.map((option) => {
         const radio = getRadioProps({ value: option?.value });
@@ -98,6 +98,7 @@ const RadioToggle = ({
             textProps={textProps}
             {...option}
             {...radio}
+            cursor={radioProps.isDisabled ? 'not-allowed' : 'pointer'}
           />
         );
       })}

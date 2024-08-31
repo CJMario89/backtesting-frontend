@@ -1,7 +1,8 @@
 const Button = {
   baseStyle: {
     // ...define your base styles
-    borderRadius: 'md',
+    // borderRadius: 'md',
+    borderRadius: 'none',
   },
   sizes: {
     sm: {
@@ -11,9 +12,9 @@ const Button = {
       px: '16px',
     },
     md: {
-      h: '40px',
-      fontSize: 'md',
-      px: '22px',
+      h: '32px',
+      fontSize: 'sm',
+      px: '18px',
     },
     lg: {
       h: '52px',
@@ -28,8 +29,8 @@ const Button = {
   },
   variants: {
     outline: {
-      border: '1px solid',
-      borderColor: 'neutral.50',
+      border: '0.1px solid',
+      borderColor: 'neutral.400',
       color: 'neutral.50',
       _hover: {
         bgColor: 'darkTheme.600',
@@ -53,12 +54,12 @@ const Button = {
 
     ghost: {
       color: 'neutral.50',
-      bgColor: 'darkTheme.700',
+      bgColor: 'darkTheme.400',
       _hover: {
-        bgColor: 'darkTheme.400',
+        bgColor: 'darkTheme.200',
       },
       _active: {
-        bgColor: 'darkTheme.200',
+        bgColor: 'darkTheme.100',
       },
     },
   },

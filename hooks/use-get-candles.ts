@@ -5,7 +5,11 @@ import { useRef } from 'react';
 
 type Candles = Record<
   string,
-  { page: number; candles: CandlestickData<Time>[] }
+  {
+    page: number;
+    candles: (CandlestickData<Time> & { volume: number })[];
+    isEnd: boolean;
+  }
 >;
 
 const useGetCandles = ({
@@ -33,9 +37,13 @@ const useGetCandles = ({
         ...(result ?? []),
         ...(candles.current?.[interval]?.candles ?? []),
       ];
+
+      const isEnd = result?.length === 0;
+
       candles.current[interval] = {
         candles: newCandles,
-        page,
+        page: isEnd ? page - 1 : page,
+        isEnd,
       };
       return candles.current[interval];
     },

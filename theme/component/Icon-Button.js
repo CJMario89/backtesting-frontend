@@ -1,7 +1,7 @@
 const IconButton = {
   baseStyle: {
     // ...define your base styles
-    borderRadius: 'md',
+    borderRadius: 'none',
   },
   sizes: {
     sm: {
@@ -28,8 +28,8 @@ const IconButton = {
   },
   variants: {
     outline: {
-      border: '1px solid',
-      borderColor: 'neutral.50',
+      border: '0.11px solid',
+      borderColor: 'neutral.500',
       color: 'neutral.50',
       _hover: {
         bgColor: 'darkTheme.600',
@@ -53,12 +53,12 @@ const IconButton = {
 
     ghost: {
       color: 'neutral.50',
-      bgColor: 'darkTheme.700',
+      bgColor: 'darkTheme.400',
       _hover: {
-        bgColor: 'darkTheme.400',
+        bgColor: 'darkTheme.300',
       },
       _active: {
-        bgColor: 'darkTheme.200',
+        bgColor: 'darkTheme.100',
       },
     },
   },
