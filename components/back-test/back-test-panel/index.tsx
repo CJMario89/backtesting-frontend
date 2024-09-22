@@ -141,7 +141,6 @@ const BackTestPanel = ({ timeframe }: { timeframe: string }) => {
   const StopLossRef = useRef<HTMLInputElement>(null);
   const capitalRef = useRef<HTMLInputElement>(null);
   const { backTestSignals } = useBackTestStore();
-  console.log(backTestSignals);
   const { allIndicator } = useIndicatorStore();
   const { mutate, isPending } = usePostBackTest({
     symbol: 'btcusdt',

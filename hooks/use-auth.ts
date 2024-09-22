@@ -13,7 +13,6 @@ const useAuth = () => {
       const response = await getProfile();
       const data = await response.json();
 
-      console.log(data);
       return data;
     },
   });

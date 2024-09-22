@@ -24,6 +24,7 @@ import {
   DeepPartial,
   IChartApi,
   ISeriesApi,
+  LogicalRange,
   SeriesOptionsCommon,
   SeriesType,
   Time,
@@ -33,9 +34,8 @@ import useGetCandles from ' /hooks/use-get-candles';
 import { useIndicatorStore } from '../store/indicator-store';
 import { RadioToggle } from ' /components/common';
 import { getIndicatorData } from ' /application/indicator';
+import IndicatorChart from './indicator-chart';
 
-// eslint-disable-next-line no-undef
-let timer: NodeJS.Timeout | null = null;
 let candleSeries: ISeriesApi<
   'Candlestick',
   Time,
@@ -94,6 +94,8 @@ const Chart = ({
     label: key,
   }));
 
+  const [logicalRange, setLogicalRange] = useState<LogicalRange | null>(null);
+
   const [page, setPage] = useState<number>(1);
 
   const timeframeIndicator = useMemo(() => {
@@ -138,7 +140,6 @@ const Chart = ({
   useEffect(() => {
     if (!data?.candles) return;
     if (!chart) return;
-    console.log('candle', data?.candles);
     if (Array.isArray(seriesArr) && seriesArr.length > 0) {
       while (seriesArr.length > 0) {
         chart.removeSeries(seriesArr[0]);
@@ -147,14 +148,12 @@ const Chart = ({
     }
     if (!(Array.isArray(indicatorsArr) && indicatorsArr.length > 0)) return;
 
-    let positionOffset = 0;
-    let positioned: string[] = [];
     indicatorsArr
       .flatMap((indicator) => indicator.indicators)
       .filter(({ isShowInChart }) => isShowInChart)
       .forEach((indicator) => {
         const { name, params, color } = indicator;
-
+        if (!params?.isPriceRelated) return;
         //three return in macd indicator
         const indicatorData = getIndicatorData({
           candles: data?.candles,
@@ -166,13 +165,11 @@ const Chart = ({
           let series: ISeriesApi<SeriesType> | undefined;
           if (key === 'histogram') {
             series = chart.addHistogramSeries({
-              priceScaleId: name,
               priceLineVisible: false,
             });
             series.setData(value);
           } else {
             series = chart.addLineSeries({
-              priceScaleId: params.isPriceRelated ? 'right' : name,
               lineWidth: 1,
               priceLineVisible: false,
             });
@@ -180,17 +177,6 @@ const Chart = ({
           }
           seriesArr.push(series);
         });
-
-        if (!positioned.includes(name) && !params.isPriceRelated) {
-          chart.priceScale(name).applyOptions({
-            scaleMargins: {
-              top: 0.78 - 0.1 * positionOffset,
-              bottom: 0.12 * positionOffset + 0.1,
-            },
-          });
-          positioned.push(name);
-          positionOffset++;
-        }
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allIndicator, data?.candles]);
@@ -248,52 +234,28 @@ const Chart = ({
           mode: CrosshairMode.Magnet,
         },
         rightPriceScale: {
-          scaleMargins: {
-            top: 0.05,
-            bottom: 0.4,
-          },
-        },
-        timeScale: {
-          // borderColor: 'rgba(197, 203, 206, 0.8)',
-          barSpacing: 10,
+          minimumWidth: 80,
         },
       },
     );
-    chart.applyOptions({
-      timeScale: {
-        tickMarkFormatter: (time: number) => {
-          return new Intl.DateTimeFormat('en-US', {
-            timeZone: 'UTC',
-            ...timeFormatOptions[radioGroupProps.value as string],
-          }).format(time * 1000);
-        },
-        fixRightEdge: true,
-        lockVisibleTimeRangeOnResize: true,
-      },
-    });
     candleSeries = chart.addCandlestickSeries({});
     const timeScale = chart.timeScale();
 
     timeScale.subscribeVisibleLogicalRangeChange(() => {
-      if (timer !== null) {
-        return;
-      }
-      timer = setTimeout(() => {
-        const logicalRange = timeScale.getVisibleLogicalRange();
-        if (logicalRange !== null) {
-          const barsInfo = candleSeries.barsInLogicalRange(logicalRange);
-          if (
-            typeof barsInfo?.barsBefore !== 'undefined' &&
-            barsInfo?.barsBefore < 1000
-          ) {
-            if (flag) {
-              setPage((prev) => prev + 1);
-              flag = false;
-            }
+      const logicalRange = timeScale.getVisibleLogicalRange();
+      setLogicalRange(logicalRange);
+      if (logicalRange !== null) {
+        const barsInfo = candleSeries.barsInLogicalRange(logicalRange);
+        if (
+          typeof barsInfo?.barsBefore !== 'undefined' &&
+          barsInfo?.barsBefore < 1000
+        ) {
+          if (flag) {
+            setPage((prev) => prev + 1);
+            flag = false;
           }
         }
-        timer = null;
-      }, 50);
+      }
     });
 
     const resizeChart = () => {
@@ -317,6 +279,35 @@ const Chart = ({
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartContainerRef.current, data]);
+
+  // render chart time scale
+  useEffect(() => {
+    console.log(chart);
+    console.log(indicatorsArr);
+    if (!chart) return;
+    if (indicatorsArr.length === 0) {
+      chart.applyOptions({
+        timeScale: {
+          barSpacing: 10,
+          tickMarkFormatter: (time: number) => {
+            return new Intl.DateTimeFormat('en-US', {
+              timeZone: 'UTC',
+              ...timeFormatOptions[radioGroupProps.value as string],
+            }).format(time * 1000);
+          },
+          fixRightEdge: true,
+          lockVisibleTimeRangeOnResize: true,
+        },
+      });
+    }
+    if (indicatorsArr.length > 0) {
+      chart.applyOptions({
+        timeScale: {
+          visible: false,
+        },
+      });
+    }
+  }, [indicatorsArr, radioGroupProps.value]);
   //
   //
   //
@@ -376,18 +367,40 @@ const Chart = ({
           />
         </Tooltip>
       </Flex>
-      <Box
-        w="full"
-        minW="300px"
-        ref={chartContainerRef}
-        position="relative"
-        p="4"
-        h="600px"
-        // h="50vh"
-        minH="400px"
-      >
-        <Box position="absolute" w="full" h="full" id="chart" />
-      </Box>
+      <Flex flexDirection="column">
+        <Box
+          w="full"
+          minW="300px"
+          ref={chartContainerRef}
+          position="relative"
+          p="4"
+          h="500px"
+          // h="50vh"
+          minH="400px"
+        >
+          <Box position="absolute" w="full" h="full" id="chart" />
+        </Box>
+        {indicatorsArr.length > 0 &&
+          data?.candles &&
+          chart &&
+          logicalRange &&
+          indicatorsArr.map((indicator, i) => {
+            const id = indicator.indicators.reduce((acc, cur) => {
+              return acc + cur.id;
+            }, '');
+            return (
+              <IndicatorChart
+                id={id}
+                key={id}
+                indicator={indicator}
+                data={data}
+                timeframe={timeframe}
+                logicalRange={logicalRange}
+                showTimeScale={indicatorsArr.length === i + 1}
+              />
+            );
+          })}
+      </Flex>
     </Flex>
   );
 };
