@@ -1,14 +1,6 @@
-import {
-  Flex,
-  HStack,
-  NumberInput,
-  NumberInputField,
-  Text,
-} from '@chakra-ui/react';
 import { BackTestSignal, useBackTestStore } from '../store/back-test-store';
 import { useIndicatorStore } from '../store/indicator-store';
-import MenuSelect from ' /components/common/menu-select';
-import IconChevronDown from ' /components/icon/chevron-down';
+import { Flex, Input, Select } from ' /styled-antd';
 import getCurrentIndicatorFromSignal from ' /hooks/get-current-indicator-from-signal';
 
 const Bound = ({
@@ -40,7 +32,12 @@ const Bound = ({
       baseIndicatorId: indicator.baseId,
     }));
 
-  const boundOptions = [
+  const boundOptions: {
+    value: string;
+    label: string;
+    indicatorId?: string;
+    baseIndicatorId?: string;
+  }[] = [
     side === 'upperBound'
       ? { value: 'max', label: `Max${max ? ` (${max})` : ''}` }
       : { value: 'min', label: `Min${!isNaN(Number(min)) ? ` (${min})` : ''}` },
@@ -62,8 +59,33 @@ const Bound = ({
   ];
   const numberDefaultValue = side === 'lowerBound' ? min : max;
   return (
-    <Flex flexDirection="column" gap="2">
-      <MenuSelect
+    <Flex vertical gap="small">
+      <Select
+        defaultValue={boundOptions[0].value}
+        onChange={(value) => {
+          const option = boundOptions.find((option) => option.value === value);
+          if (!option) return;
+          changeTempSignal({
+            ...signal,
+            [side]: {
+              name: option.value,
+              ...(option.value === 'number'
+                ? { value: numberDefaultValue }
+                : {}),
+              ...(option.indicatorId && option.baseIndicatorId
+                ? {
+                    value: allIndicator[option.indicatorId]?.indicators?.find(
+                      (baseIndicator) =>
+                        baseIndicator.baseId === option.baseIndicatorId,
+                    ),
+                  }
+                : {}),
+            },
+          });
+        }}
+        options={boundOptions}
+      />
+      {/* <MenuSelect
         options={boundOptions}
         value={
           boundOptions.find((option) => option.value === signal[side].name) ||
@@ -90,44 +112,41 @@ const Bound = ({
         }}
         renderButtonText={(option) => option?.label}
         renderOption={(option, isSelected) => (
-          <HStack>
+          <Flex gap="small">
             {option?.label}
-            <Text
-              fontSize="sm"
-              color={isSelected ? 'neutral.50' : 'neutral.200'}
-            >
+            <Text color={isSelected ? 'neutral.50' : 'neutral.200'}>
               {option?.label}
             </Text>
-          </HStack>
+          </Flex>
         )}
         menuButtonProps={{
           fontSize: 'sm',
-          rightIcon: <IconChevronDown />,
+          rightIcon: <DownOutlined />,
           // isDisabled: !currentIndicator?.id,
         }}
         defaultValue={signal[side].name}
-      />
+      /> */}
       {signal[side].name === 'number' && (
-        <NumberInput
+        <Input
+          type="number"
+          style={{
+            maxWidth: '134px',
+          }}
           name={side}
           defaultValue={numberDefaultValue?.toString()}
           {...(typeof signal[side].value === 'number'
             ? { value: signal[side].value as number }
             : {})}
-          maxW="134px"
-        >
-          <NumberInputField
-            onChange={(e) => {
-              changeTempSignal({
-                ...signal,
-                [side]: {
-                  name: 'number',
-                  value: Number(e.target.value),
-                },
-              });
-            }}
-          />
-        </NumberInput>
+          onChange={(e) => {
+            changeTempSignal({
+              ...signal,
+              [side]: {
+                name: 'number',
+                value: Number(e.target.value),
+              },
+            });
+          }}
+        />
       )}
     </Flex>
   );

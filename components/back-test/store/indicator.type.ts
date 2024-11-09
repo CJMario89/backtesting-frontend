@@ -13,7 +13,7 @@ export type IndicatorParams = {
   dperiod?: string;
   slowperiod?: string;
   resultOption?: string;
-  input: IndicatorInput;
+  input?: IndicatorInput;
 };
 
 export type BaseIndicator = {

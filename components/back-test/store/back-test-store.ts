@@ -30,12 +30,12 @@ export type BackTestSignal = {
 export type BackTestSignalStore = {
   tempSignal?: BackTestSignal;
   backTestSignals: BackTestSignal[];
-  backTestResult: BackTestOutput;
-  backtestResults: BackTestOutput[];
+  // backTestResult: BackTestOutput;
+  // backtestResults: BackTestOutput[];
   changeTempSignal: (signal: BackTestSignal) => void;
   addBackTestSignal: (signal: BackTestSignal) => void;
-  addBackTestResult: (result: BackTestOutput) => void;
-  removeBackTestResult: () => void;
+  // addBackTestResult: (result: BackTestOutput) => void;
+  // removeBackTestResult: () => void;
   changeBackTestSignal: (signal: BackTestSignal) => void;
   removeBackTestSignal: (id: string) => void;
 };
@@ -45,8 +45,8 @@ export const useBackTestStore = create<BackTestSignalStore>()(
     persist(
       (set) => ({
         backTestSignals: [],
-        backTestResult: {} as BackTestOutput,
-        backtestResults: [],
+        // backTestResult: {} as BackTestOutput,
+        // backtestResults: [],
         changeTempSignal: (signal: BackTestSignal) => {
           return set((state) => {
             return {
@@ -89,22 +89,22 @@ export const useBackTestStore = create<BackTestSignalStore>()(
             };
           });
         },
-        addBackTestResult: (result: BackTestOutput) => {
-          return set((state) => {
-            return {
-              ...state,
-              backTestResult: result,
-            };
-          });
-        },
-        removeBackTestResult: () => {
-          return set((state) => {
-            return {
-              ...state,
-              backTestResult: {} as BackTestOutput,
-            };
-          });
-        },
+        // addBackTestResult: (result: BackTestOutput) => {
+        //   return set((state) => {
+        //     return {
+        //       ...state,
+        //       backTestResult: result,
+        //     };
+        //   });
+        // },
+        // removeBackTestResult: () => {
+        //   return set((state) => {
+        //     return {
+        //       ...state,
+        //       backTestResult: {} as BackTestOutput,
+        //     };
+        //   });
+        // },
       }),
       { name: 'backTest' },
     ),

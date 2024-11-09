@@ -1,17 +1,25 @@
 'use client';
 
-import getTheme from ' /theme';
-import { ChakraProvider, DarkMode } from '@chakra-ui/react';
+import { AntdRegistry } from '@ant-design/nextjs-registry';
 import {
   PayPalHostedFieldsProvider,
   PayPalScriptProvider,
   ReactPayPalScriptOptions,
 } from '@paypal/react-paypal-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ConfigProvider, theme } from 'antd';
 import React from 'react';
 import { IntlProvider } from 'react-intl';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      staleTime: Infinity,
+    },
+  },
+});
 
 const initialOptions = {
   clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID,
@@ -24,8 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <IntlProvider locale="en">
-        <ChakraProvider theme={getTheme()}>
-          {/* <PayPalScriptProvider options={initialOptions}>
+        {/* <PayPalScriptProvider options={initialOptions}>
             <PayPalHostedFieldsProvider
               createOrder={() => {
                 // Here define the call to create and order
@@ -37,10 +44,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
                   });
               }}
             > */}
-          <DarkMode>{children}</DarkMode>
-          {/* </PayPalHostedFieldsProvider>
+
+        <AntdRegistry>
+          <ConfigProvider
+            theme={{
+              algorithm: theme.darkAlgorithm,
+              token: {
+                fontFamily: 'Inter',
+                colorPrimaryText: 'white',
+              },
+            }}
+          >
+            {children}
+          </ConfigProvider>
+        </AntdRegistry>
+        {/* </PayPalHostedFieldsProvider>
           </PayPalScriptProvider> */}
-        </ChakraProvider>
       </IntlProvider>
     </QueryClientProvider>
   );

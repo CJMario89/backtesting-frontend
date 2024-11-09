@@ -1,55 +1,90 @@
-import { Flex, Text } from '@chakra-ui/react';
-import { BaseIndicatorExtended } from '../store/indicator.type';
 import { BackTestSignal } from '../store/back-test-store';
 import getCurrentIndicatorFromSignal from ' /hooks/get-current-indicator-from-signal';
 import { useIndicatorStore } from '../store/indicator-store';
+import { Flex, Text } from ' /styled-antd';
+import { Signal } from ' /type';
 
 const BoundText = ({
   side,
   signal,
+  displayName,
 }: {
   side: 'upperBound' | 'lowerBound';
-  signal: BackTestSignal;
+  signal: BackTestSignal | Signal;
+  displayName?: string;
 }) => {
-  const baseIndicator = signal.baseIndicator;
-  const boundValue = getBoundValue({ side, signal, baseIndicator });
+  const boundValue = getBoundValue({ side, signal });
   if (!boundValue && typeof boundValue !== 'number') {
     return null;
   }
   return (
-    <Flex gap="2" flexWrap="wrap">
-      <Text fontWeight="bold" whiteSpace="nowrap">
-        {baseIndicator?.displayName}
+    <Flex
+      gap="small"
+      style={{
+        flexWrap: 'wrap',
+      }}
+    >
+      <Text
+        style={{
+          whiteSpace: 'nowrap',
+          fontWeight: 600,
+          color: '#1668dc',
+        }}
+      >
+        {displayName ?? ''}
       </Text>
       <Text>{side === 'upperBound' ? 'below' : 'above'}</Text>
-      <Text fontWeight="bold" whiteSpace="nowrap">
+      <Text
+        style={{
+          whiteSpace: 'nowrap',
+          fontWeight: '600',
+          color: '#1668dc',
+        }}
+      >
         {boundValue.toString()}
       </Text>
     </Flex>
   );
 };
 
-const ConditionText = ({ signal }: { signal: BackTestSignal }) => {
+const ConditionText = ({
+  signal,
+  name,
+}: {
+  signal: BackTestSignal | Signal;
+  name?: string;
+}) => {
   const { allIndicator } = useIndicatorStore();
-  const { baseIndicator } = getCurrentIndicatorFromSignal({
-    signal,
-    allIndicator,
-  });
+  const displayName =
+    name ??
+    getCurrentIndicatorFromSignal({
+      // @ts-ignore
+      signal,
+      allIndicator,
+    })?.baseIndicator?.displayName;
 
-  const UpperBoundText = <BoundText side="upperBound" signal={signal} />;
-  const LowerBoundText = <BoundText side="lowerBound" signal={signal} />;
+  const UpperBoundText = (
+    <BoundText side="upperBound" signal={signal} displayName={displayName} />
+  );
+  const LowerBoundText = (
+    <BoundText side="lowerBound" signal={signal} displayName={displayName} />
+  );
   const upperBoundValue = getBoundValue({
     side: 'upperBound',
     signal,
-    baseIndicator,
   });
   const lowerBoundValue = getBoundValue({
     side: 'lowerBound',
     signal,
-    baseIndicator,
   });
   return (
-    <Flex alignItems="center" gap="2" flexWrap="wrap" flex="1">
+    <Flex
+      align="center"
+      gap="small"
+      style={{
+        flexWrap: 'wrap',
+      }}
+    >
       {typeof upperBoundValue !== 'undefined' && UpperBoundText}
       {typeof upperBoundValue !== 'undefined' &&
         typeof lowerBoundValue !== 'undefined' && <Text>and </Text>}
@@ -63,8 +98,7 @@ export function getBoundValue({
   signal,
 }: {
   side: 'upperBound' | 'lowerBound';
-  signal: BackTestSignal;
-  baseIndicator?: BaseIndicatorExtended;
+  signal: BackTestSignal | Signal;
 }) {
   const boundNameMap = {
     // max: '',

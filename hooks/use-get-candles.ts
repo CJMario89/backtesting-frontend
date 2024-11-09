@@ -38,6 +38,9 @@ const useGetCandles = ({
         ...(candles.current?.[interval]?.candles ?? []),
       ];
 
+      newCandles.filter((candle, index) => {
+        return newCandles.findIndex((c) => c.time === candle.time) === index;
+      });
       const isEnd = result?.length === 0;
 
       candles.current[interval] = {

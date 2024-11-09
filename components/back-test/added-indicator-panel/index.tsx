@@ -1,28 +1,25 @@
-import {
-  Box,
-  Button,
-  Divider,
-  Flex,
-  Heading,
-  IconButton,
-  Input,
-  Text,
-  Tooltip,
-  UseDisclosureProps,
-} from '@chakra-ui/react';
-
 import { useIndicatorStore } from '../store/indicator-store';
 import {
   BaseIndicatorExtended,
   IndicatorExtended,
 } from '../store/indicator.type';
-import IconAdd from ' /components/icon/add';
-import IconChart from ' /components/icon/chart';
-import IconChartOff from ' /components/icon/chart-off';
-import IconClose from ' /components/icon/close';
+import IconChart from ' /components/icon/chart.svg';
+import IconChartOff from ' /components/icon/chart-off.svg';
+import IconClose from ' /components/icon/close.svg';
 import ParamsSetting from './params-setting';
 import { paramsSetting } from '../store/constants';
 import { useBackTestStore } from '../store/back-test-store';
+import {
+  Button,
+  Divider,
+  Flex,
+  Input,
+  Text,
+  Title,
+  Tooltip,
+} from ' /styled-antd';
+import { PlusOutlined } from '@ant-design/icons';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 const IndicatorOptions = ({
   baseIndicator,
@@ -45,28 +42,30 @@ const IndicatorOptions = ({
     (signal) => signal.indicatorId === baseIndicator.id,
   );
   return (
-    <Flex gap="2">
+    <Flex gap="small">
       {!baseIndicator.isColorFixed && (
         <Input
-          w="9"
-          px="1"
+          style={{
+            width: '36px',
+            padding: '0 4px',
+          }}
           type="color"
           value={color}
           onChange={(e) => setColor(e.target.value)}
         />
       )}
       <Tooltip
-        label={
+        title={
           baseIndicator.isShowInChart ? 'Remove from Chart' : 'Add to Chart'
         }
         aria-label={
           baseIndicator.isShowInChart ? 'Remove from Chart' : 'Add to Chart'
         }
       >
-        <IconButton
-          h="8"
-          minW="8"
-          variant="ghost"
+        <Button
+          style={{
+            height: '32px',
+          }}
           icon={
             baseIndicator.isShowInChart ? (
               <IconChart w="4" h="4" />
@@ -84,16 +83,17 @@ const IndicatorOptions = ({
         />
       </Tooltip>
       <Tooltip
-        label={isInUse ? 'This indicator is in used' : 'Remove Indicator'}
+        title={isInUse ? 'This indicator is in used' : 'Remove Indicator'}
         aria-label="Remove"
       >
-        <IconButton
-          h="8"
-          minW="8"
-          variant="ghost"
-          icon={<IconClose w="4" h="4" />}
+        <Button
+          style={{
+            height: '32px',
+            minWidth: '32px',
+          }}
+          icon={<IconClose />}
           aria-label=""
-          isDisabled={isInUse}
+          disabled={isInUse}
           onClick={() => {
             if (!isInUse) {
               removeIndicator({
@@ -110,17 +110,19 @@ const IndicatorOptions = ({
 const IndicatorSettings = ({ indicator }: { indicator: IndicatorExtended }) => {
   return (
     <Flex
-      gap="2"
-      p="2"
-      py="4"
-      flexDirection="column"
-      borderBottom="0.1px solid"
-      borderColor="neutral.500"
+      gap="small"
+      style={{
+        padding: '16px 8px',
+        borderBottom: '0.1px solid',
+        borderColor: '#727274',
+        width: '100%',
+      }}
+      vertical
     >
-      <Heading as="h6">{indicator.name}</Heading>
+      <Title level={5}>{indicator.name}</Title>
       {indicator.indicators.map((baseIndicator) => (
-        <Flex key={baseIndicator.name} flexDirection="column" gap="4">
-          <Flex justifyContent="space-between" alignItems="center">
+        <Flex key={baseIndicator.name} vertical gap="middle">
+          <Flex justify="space-between" align="center">
             <Text>{baseIndicator.displayName}</Text>
             <IndicatorOptions baseIndicator={baseIndicator} />
           </Flex>
@@ -141,55 +143,89 @@ const IndicatorSettings = ({ indicator }: { indicator: IndicatorExtended }) => {
   );
 };
 
-const AddedIndicatorPanel = ({
-  indicatorPanelDisclosure: { onOpen },
-}: {
-  indicatorPanelDisclosure: UseDisclosureProps;
-}) => {
+const AddedIndicatorPanel = forwardRef(function AddedIndicatorPanel(
+  { onOpen }: { onOpen?: () => void },
+  ref,
+) {
   const { allIndicator } = useIndicatorStore();
   const indicatorsArr = Object.values(allIndicator);
+
+  //tour ref
+  const entireTourRef = useRef<HTMLDivElement>(null);
+  const addButtonTourRef = useRef<HTMLButtonElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    getEntireTourRef: () => {
+      return entireTourRef.current;
+    },
+    getAddButtonTourRef: () => {
+      return addButtonTourRef.current;
+    },
+  }));
+
   return (
     <Flex
       flex="1"
-      p="2"
-      flexDirection="column"
-      gap="2"
-      maxW="400px"
-      bgColor="darkTheme.800"
+      style={{
+        padding: '8px',
+        maxWidth: '400px',
+        background: '#17171c',
+      }}
+      vertical
+      gap="small"
+      ref={entireTourRef}
     >
-      <Heading
-        as="h4"
-        position="sticky"
-        top="0"
-        zIndex="3"
-        bgColor="darkTheme.800"
+      <Title
+        level={4}
+        style={{
+          position: 'sticky',
+          top: '0',
+          zIndex: 3,
+        }}
       >
         Indicators
-      </Heading>
+      </Title>
       <Divider />
 
-      <Box overflowY="auto" h="588px">
-        <Flex flexDirection="column" gap="2" position="relative">
+      <Flex
+        style={{
+          overflowY: 'auto',
+          height: '588px',
+        }}
+      >
+        <Flex
+          vertical
+          style={{
+            position: 'relative',
+            width: '100%',
+          }}
+        >
           {indicatorsArr.map((indicator) => (
             <IndicatorSettings key={indicator.name} indicator={indicator} />
           ))}
         </Flex>
-      </Box>
-      <Box flex="1" py="2" alignSelf="center">
+      </Flex>
+      <Flex
+        flex="1"
+        style={{
+          padding: '8px',
+        }}
+        align="center"
+      >
         <Button
-          size="md"
-          rightIcon={<IconAdd />}
           onClick={() => {
             if (onOpen) {
               onOpen();
             }
           }}
+          ref={addButtonTourRef}
         >
+          <PlusOutlined />
           Add Indicator
         </Button>
-      </Box>
+      </Flex>
     </Flex>
   );
-};
+});
 
 export default AddedIndicatorPanel;

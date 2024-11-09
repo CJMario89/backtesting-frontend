@@ -1,4 +1,3 @@
-import { Box } from '@chakra-ui/react';
 import {
   createChart,
   CrosshairMode,
@@ -6,32 +5,33 @@ import {
   ISeriesApi,
   LogicalRange,
   SeriesType,
+  Time,
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
 import { timeFormatOptions } from './index';
-import { useIndicatorStore } from '../store/indicator-store';
 import { getIndicatorData } from ' /application/indicator';
 import { IndicatorExtended } from '../store/indicator.type';
+import { Flex } from ' /styled-antd';
 const IndicatorChart = ({
   id,
   timeframe,
   data,
   indicator,
+  dataPoint,
   logicalRange,
-  showTimeScale,
+  showTimeScaleId,
 }: {
   id: string;
   timeframe: string;
   data?: any;
   indicator?: IndicatorExtended;
+  dataPoint?: { time: Time; value: number };
   logicalRange: LogicalRange | null;
-  showTimeScale: boolean;
+  showTimeScaleId: string;
 }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
   const seriesArr = useRef<ISeriesApi<SeriesType>[]>([]);
-  const { allIndicator } = useIndicatorStore();
-  const indicatorsArr = Object.values(allIndicator);
 
   useEffect(() => {
     if (!data) return;
@@ -43,16 +43,17 @@ const IndicatorChart = ({
       handleScale: false,
       handleScroll: false,
       width: chartContainerRef.current.clientWidth - 32,
-      height: chartContainerRef.current.clientHeight - 32,
+      height: chartContainerRef.current.clientHeight,
       layout: {
         background: {
           color: '#17171c',
         },
         textColor: '#727274',
+        attributionLogo: false,
       },
       grid: {
         vertLines: {
-          color: '#49494E',
+          visible: false,
         },
         horzLines: {
           color: '#49494E',
@@ -79,8 +80,43 @@ const IndicatorChart = ({
         seriesArr.current.shift();
       }
     }
-    if (!(Array.isArray(indicatorsArr) && indicatorsArr.length > 0)) return;
 
+    const resizeChart = () => {
+      if (!chart || !chartContainerRef.current) return;
+      chart.current?.applyOptions({
+        width: chartContainerRef.current.clientWidth - 32,
+        height: chartContainerRef.current.clientHeight,
+      });
+      // chart.timeScale().fitContent();
+    };
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentBoxSize) {
+          resizeChart();
+        }
+      }
+    });
+
+    resizeObserver.observe(chartContainerRef.current);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartContainerRef.current, data]);
+
+  useEffect(() => {
+    if (!data) return;
+    if (!chart.current) return;
+    if (!indicator) return;
+
+    if (Array.isArray(seriesArr.current) && seriesArr.current.length > 0) {
+      while (seriesArr.current.length > 0) {
+        try {
+          chart.current.removeSeries(seriesArr.current[0]);
+        } catch (e) {
+          console.log(e);
+        }
+        seriesArr.current.shift();
+      }
+    }
     indicator?.indicators?.forEach((baseIndicator) => {
       const { name, params, color } = baseIndicator;
 
@@ -110,27 +146,8 @@ const IndicatorChart = ({
         seriesArr.current?.push(series);
       });
     });
-
-    const resizeChart = () => {
-      if (!chart || !chartContainerRef.current) return;
-      chart.current?.applyOptions({
-        width: chartContainerRef.current.clientWidth - 32,
-        height: chartContainerRef.current.clientHeight - 32,
-      });
-      // chart.timeScale().fitContent();
-    };
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentBoxSize) {
-          resizeChart();
-        }
-      }
-    });
-
-    resizeObserver.observe(chartContainerRef.current);
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chartContainerRef.current, data]);
+  }, [data?.candles, indicator]);
 
   useEffect(() => {
     if (!logicalRange) return;
@@ -146,7 +163,7 @@ const IndicatorChart = ({
     if (!data) return;
     if (!chart) return;
     if (seriesArr.current.length === 0) return;
-    if (showTimeScale) {
+    if (showTimeScaleId === id) {
       chart.current?.applyOptions({
         timeScale: {
           barSpacing: 10,
@@ -158,30 +175,51 @@ const IndicatorChart = ({
           },
           fixRightEdge: true,
           lockVisibleTimeRangeOnResize: true,
+          visible: true,
         },
       });
     }
-    if (!showTimeScale) {
+    if (showTimeScaleId !== id) {
       chart.current?.applyOptions({
         timeScale: {
           visible: false,
         },
       });
     }
-  }, [data, showTimeScale, timeframe, seriesArr]);
+  }, [data, timeframe, seriesArr, showTimeScaleId, id]);
 
+  useEffect(() => {
+    if (!dataPoint) return;
+    if (!chart.current) return;
+    if (seriesArr.current.length === 0) return;
+    seriesArr.current.forEach((series) => {
+      if (!chart.current) return;
+      chart.current.setCrosshairPosition(
+        dataPoint.value,
+        dataPoint.time,
+        series,
+      );
+    });
+  }, [dataPoint]);
   return (
-    <Box
-      w="full"
-      minW="300px"
-      position="relative"
-      p="4"
-      h="100px"
-      minH="100px"
+    <Flex
+      style={{
+        width: '100%',
+        height: '100px',
+        minHeight: '100px',
+        position: 'relative',
+      }}
       ref={chartContainerRef}
     >
-      <Box position="absolute" w="full" h="full" id={id} />
-    </Box>
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+        }}
+        id={id}
+      />
+    </Flex>
   );
 };
 

@@ -1,31 +1,23 @@
-import {
-  Button,
-  Divider,
-  Flex,
-  Heading,
-  HStack,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalOverlay,
-  Text,
-  Tooltip,
-  UseDisclosureProps,
-} from '@chakra-ui/react';
 import { BackTestSignal, useBackTestStore } from '../store/back-test-store';
 import { useIndicatorStore } from '../store/indicator-store';
 import Bound from './bound';
 import { capitalize } from ' /utils';
 import ConditionText, { getBoundValue } from './condition-text';
-import MenuSelect from ' /components/common/menu-select';
-import IconChevronDown from ' /components/icon/chevron-down';
 import {
   BaseIndicatorExtended,
   IndicatorExtended,
 } from '../store/indicator.type';
 
 import { v4 as uuid } from 'uuid';
+import {
+  Button,
+  Flex,
+  Modal,
+  Select,
+  Text,
+  Title,
+  Tooltip,
+} from ' /styled-antd';
 
 const IndicatorSelector = ({
   action,
@@ -36,7 +28,12 @@ const IndicatorSelector = ({
 }) => {
   const { changeTempSignal } = useBackTestStore();
   const { allIndicator } = useIndicatorStore();
-  const indicatorOptions = [
+  const indicatorOptions: {
+    value: string;
+    label: string;
+    indicatorId?: string;
+    baseIndicator?: BaseIndicatorExtended;
+  }[] = [
     {
       value: 'price',
       label: 'Current Price',
@@ -51,19 +48,20 @@ const IndicatorSelector = ({
         baseIndicator,
       })),
   ];
-  console.log(allIndicator);
   const hasIndicator = Object.keys(allIndicator).length > 0;
   return (
     <Tooltip
-      label={
+      title={
         hasIndicator ? '' : 'Please add an indicator from the indicator panel'
       }
       placement="top"
-      isDisabled={false}
-      shouldWrapChildren
+      open={false}
     >
-      <MenuSelect
+      <Select
         options={indicatorOptions}
+        style={{
+          width: '100%',
+        }}
         value={
           indicatorOptions.find((option) => {
             if (signal?.baseIndicatorId === option.value) {
@@ -75,14 +73,18 @@ const IndicatorSelector = ({
             label: 'Select Indicator',
           }
         }
-        onChange={(option) => {
+        onChange={(option: any) => {
+          const indicatorOption = indicatorOptions.find(
+            (indicatorOption) => indicatorOption.value === option,
+          );
+          if (!indicatorOption) return;
           changeTempSignal({
             id: uuid(),
             action,
             logicOperator: 'and',
-            baseIndicatorId: option.value,
-            baseIndicator: option.baseIndicator,
-            indicatorId: option.indicatorId,
+            baseIndicatorId: indicatorOption.value,
+            baseIndicator: indicatorOption?.baseIndicator,
+            indicatorId: indicatorOption.indicatorId ?? '',
             upperBound: {
               name: 'max',
             },
@@ -91,24 +93,6 @@ const IndicatorSelector = ({
             },
           });
         }}
-        renderButtonText={(option) => option?.label}
-        renderOption={(option, isSelected) => (
-          <HStack>
-            {option?.label}
-            <Text
-              fontSize="sm"
-              color={isSelected ? 'neutral.50' : 'neutral.200'}
-            >
-              {option?.label}
-            </Text>
-          </HStack>
-        )}
-        menuButtonProps={{
-          isDisabled: !hasIndicator,
-          fontSize: 'sm',
-          rightIcon: <IconChevronDown />,
-        }}
-        defaultValue=""
       />
     </Tooltip>
   );
@@ -118,26 +102,61 @@ const SettingModal = ({
   action,
   isOpen = false,
   onClose = () => {},
-}: { action: 'buy' | 'sell' } & UseDisclosureProps) => {
+}: {
+  action: 'buy' | 'sell';
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
   const { tempSignal, addBackTestSignal } = useBackTestStore();
   const signal = tempSignal;
 
   return (
-    <Modal isOpen={isOpen} onClose={() => {}}>
-      <ModalOverlay />
+    <Modal
+      open={isOpen}
+      onCancel={() => {
+        onClose();
+      }}
+      title={<Title level={3}>Add {capitalize(action)} Signal</Title>}
+      footer={
+        <Button
+          onClick={() => {
+            if (signal && signal.baseIndicator) {
+              const upperBoundValue = getBoundValue({
+                side: 'upperBound',
+                signal,
+              });
+              const lowerBoundValue = getBoundValue({
+                side: 'lowerBound',
+                signal,
+              });
+              if (
+                typeof upperBoundValue !== 'undefined' ||
+                typeof lowerBoundValue !== 'undefined'
+              ) {
+                addBackTestSignal(signal);
+              }
+            }
+            onClose();
+          }}
+        >
+          Confirm
+        </Button>
+      }
+    >
       <form
+        style={{
+          minHeight: '400px',
+        }}
         onSubmit={(e) => {
           e.preventDefault();
           if (signal && signal.baseIndicator) {
             const upperBoundValue = getBoundValue({
               side: 'upperBound',
               signal,
-              baseIndicator: signal.baseIndicator,
             });
             const lowerBoundValue = getBoundValue({
               side: 'lowerBound',
               signal,
-              baseIndicator: signal.baseIndicator,
             });
             if (
               typeof upperBoundValue !== 'undefined' ||
@@ -149,41 +168,86 @@ const SettingModal = ({
           onClose();
         }}
       >
-        <ModalContent bgColor="darkTheme.900" p="6">
-          {/* <ModalHeader>{currentIndicator?.name}</ModalHeader> */}
-          <ModalBody>
-            <Flex gap="4" flexDirection="column">
-              <Heading as="h3">{capitalize(action)}</Heading>
-              <Flex alignItems="center" gap="4">
-                <Text>when</Text>
-                <IndicatorSelector action={action} signal={signal} />
-                <Text>is</Text>
+        <Flex gap="middle" vertical>
+          <Title level={5}>Select an indicator to add a {action} signal:</Title>
+          <IndicatorSelector action={action} signal={signal} />
+          {signal?.indicatorId && (
+            <Flex vertical gap="middle">
+              <Flex vertical gap="small">
+                <Text>{capitalize(action)} when signal is above:</Text>
+                <Bound signal={signal} side="lowerBound" />
               </Flex>
-              {signal?.indicatorId && (
-                <Flex gap="4" flexDirection="column">
-                  <Flex alignItems="center" gap="4">
-                    <Text>above</Text>
-                    <Bound signal={signal} side="lowerBound" />
-                  </Flex>
-                  <Flex alignItems="center" gap="4">
-                    <Text>below</Text>
-                    <Bound signal={signal} side="upperBound" />
-                  </Flex>
-                  <Divider />
-                  <Text>{capitalize(action)} when </Text>
-                  <ConditionText signal={signal} />
-                </Flex>
-              )}
+              <Flex vertical gap="small">
+                <Text>{capitalize(action)} when signal is below:</Text>
+                <Bound signal={signal} side="upperBound" />
+              </Flex>
+              <ConditionText signal={signal} />
             </Flex>
-          </ModalBody>
-          <ModalFooter>
-            <Button size="md" type="submit">
-              Confirm
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+          )}
+        </Flex>
       </form>
     </Modal>
+    // <Modal isOpen={isOpen} onClose={() => {}}>
+    //   <ModalOverlay />
+    //   <form
+    //     onSubmit={(e) => {
+    //       e.preventDefault();
+    //       if (signal && signal.baseIndicator) {
+    //         const upperBoundValue = getBoundValue({
+    //           side: 'upperBound',
+    //           signal,
+    //           baseIndicator: signal.baseIndicator,
+    //         });
+    //         const lowerBoundValue = getBoundValue({
+    //           side: 'lowerBound',
+    //           signal,
+    //           baseIndicator: signal.baseIndicator,
+    //         });
+    //         if (
+    //           typeof upperBoundValue !== 'undefined' ||
+    //           typeof lowerBoundValue !== 'undefined'
+    //         ) {
+    //           addBackTestSignal(signal);
+    //         }
+    //       }
+    //       onClose();
+    //     }}
+    //   >
+    //     <ModalContent bgColor="darkTheme.900" p="6">
+    //       {/* <ModalHeader>{currentIndicator?.name}</ModalHeader> */}
+    //       <ModalBody>
+    //         <Flex gap="4" flexDirection="column">
+    //           <Heading as="h3">{capitalize(action)}</Heading>
+    //           <Flex alignItems="center" gap="4">
+    //             <Text>when</Text>
+    //             <IndicatorSelector action={action} signal={signal} />
+    //             <Text>is</Text>
+    //           </Flex>
+    //           {signal?.indicatorId && (
+    //             <Flex gap="4" flexDirection="column">
+    //               <Flex alignItems="center" gap="4">
+    //                 <Text>above</Text>
+    //                 <Bound signal={signal} side="lowerBound" />
+    //               </Flex>
+    //               <Flex alignItems="center" gap="4">
+    //                 <Text>below</Text>
+    //                 <Bound signal={signal} side="upperBound" />
+    //               </Flex>
+    //               <Divider />
+    //               <Text>{capitalize(action)} when </Text>
+    //               <ConditionText signal={signal} />
+    //             </Flex>
+    //           )}
+    //         </Flex>
+    //       </ModalBody>
+    //       <ModalFooter>
+    //         <Button size="md" type="submit">
+    //           Confirm
+    //         </Button>
+    //       </ModalFooter>
+    //     </ModalContent>
+    //   </form>
+    // </Modal>
   );
 };
 

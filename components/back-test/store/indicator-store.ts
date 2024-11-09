@@ -26,6 +26,8 @@ export type SetIndicatorColor = (params: {
 }) => void;
 
 interface IndicatorStore {
+  timeframe: string;
+  changeTimeframe: (timeframe: string) => void;
   allIndicator: Record<string, IndicatorExtended>;
   addIndicator: AddIndicator;
   setIndicatorParams: SetIndicatorParams;
@@ -38,6 +40,10 @@ export const useIndicatorStore = create<IndicatorStore>()(
   devtools(
     persist(
       (set) => ({
+        timeframe: '1d',
+        changeTimeframe: (timeframe) => {
+          set({ timeframe });
+        },
         allIndicator: {} as Record<string, IndicatorExtended>,
         addIndicator: (indicator) => {
           const id = indicator.name === 'volume' ? 'volume' : uuid();

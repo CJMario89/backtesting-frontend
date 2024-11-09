@@ -1,6 +1,7 @@
 import { BackTestSignal } from ' /components/back-test/store/back-test-store';
 import { signalIndicators } from ' /components/back-test/store/constants';
 import { IndicatorExtended } from ' /components/back-test/store/indicator.type';
+import { Signal } from ' /type';
 
 const getCurrentIndicatorFromSignal = ({
   signal,

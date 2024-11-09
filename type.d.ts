@@ -1,4 +1,6 @@
 import { Time } from 'lightweight-charts';
+import { BackTestSignal } from './components/back-test/store/back-test-store';
+import { IndicatorExtended } from './components/back-test/store/indicator.type';
 
 export type Interval =
   | '1m'
@@ -40,7 +42,7 @@ export type Indicator = {
 
 export type Signal = {
   id: string;
-  indicator: Indicator;
+  indicator: BaseIndicatorExtended;
   upperBound: {
     id?: string;
     name: string;
@@ -51,6 +53,7 @@ export type Signal = {
     name: string;
     value?: number | Indicator | string;
   };
+  logicOperator: 'and' | 'or';
   params: Record<string, string>;
 };
 export type BackTestInputDto = {
@@ -79,7 +82,7 @@ export type BackTestOutput = {
   signals: Signal[];
   candles: Candle[];
   buySellCandlesPairs: Trade[];
-  initailCaptial: number;
+  initialCaptial: number;
   capital: number;
   totalProfit: number;
   profitRate: number;
@@ -88,5 +91,5 @@ export type BackTestOutput = {
   annualizedReturn: number;
   startTime: string;
   endTime: string;
-  timeFrame: string;
+  timeframe: string;
 };

@@ -1,128 +1,175 @@
-import { Divider, Flex, Heading, Text } from '@chakra-ui/react';
-import { FormatDateOptions, FormatNumberOptions, useIntl } from 'react-intl';
-import useGetTime from ' /hooks/use-get-time';
-import { useBackTestStore } from '../store/back-test-store';
-import ResultChart from './result-chart';
+import {
+  Button,
+  Divider,
+  Flex,
+  Input,
+  Modal,
+  Text,
+  Title,
+} from ' /styled-antd';
+import { db } from ' /app/indexDB';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useState } from 'react';
+import Result from './result';
+import BackTestResultType from ' /app/indexDB/backtest-result';
+import { CheckOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
-const formatTimeOption = {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: 'numeric',
-} as FormatDateOptions;
+// const formatCurrencyOption = {
+//   style: 'currency',
+//   currency: 'USD',
+// } as FormatNumberOptions;
 
-const formatCurrencyOption = {
-  style: 'currency',
-  currency: 'USD',
-} as FormatNumberOptions;
+// const formatPercentOption = {
+//   style: 'percent',
+//   minimumFractionDigits: 2,
+//   maximumFractionDigits: 2,
+// } as FormatNumberOptions;
 
-const formatPercentOption = {
-  style: 'percent',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-} as FormatNumberOptions;
+const BackTestResultPanel = ({
+  backTestResult,
+  index,
+}: {
+  backTestResult: BackTestResultType;
+  index: number;
+}) => {
+  const [editMode, setEditMode] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  return (
+    <Flex gap="small" key={backTestResult.id} justify="space-between">
+      <Flex gap="middle" align="center">
+        <Title level={4}>{index + 1}.</Title>
+        <Flex vertical>
+          <Flex align="center" gap="small">
+            {
+              // eslint-disable-next-line no-nested-ternary
+              editMode ? (
+                <Input
+                  size="small"
+                  value={backTestResult.name}
+                  onChange={(e) => {
+                    db.backtestResult.update(backTestResult.id, {
+                      name: e.target.value,
+                    });
+                  }}
+                  onPressEnter={() => {
+                    setEditMode(false);
+                  }}
+                />
+              ) : (
+                <Title level={5}>{backTestResult.name}</Title>
+              )
+            }
+            {
+              // eslint-disable-next-line no-nested-ternary
+              editMode ? (
+                <Button
+                  type="text"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    padding: 0,
+                  }}
+                  onClick={() => {
+                    setEditMode(false);
+                  }}
+                >
+                  <CheckOutlined />
+                </Button>
+              ) : (
+                <Button
+                  type="text"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    padding: 0,
+                  }}
+                  onClick={() => {
+                    setEditMode(true);
+                  }}
+                >
+                  <EditOutlined />
+                </Button>
+              )
+            }
+          </Flex>
+          <Text
+            style={{
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.45)',
+            }}
+          >
+            Run at {backTestResult.createdAt}
+          </Text>
+        </Flex>
+      </Flex>
+      <Flex align="center" gap="small">
+        <Button
+          onClick={() => {
+            setModalOpen(true);
+          }}
+        >
+          View
+        </Button>
+        <Button
+          style={{
+            width: '32px',
+            height: '32px',
+            padding: 0,
+          }}
+          onClick={() => {
+            db.backtestResult.delete(backTestResult.id);
+          }}
+        >
+          <DeleteOutlined />
+        </Button>
+      </Flex>
+      <Modal
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        title={backTestResult?.name}
+        footer={null}
+        style={{
+          top: 20,
+          bottom: 20,
+          height: 'calc(100% - 40px)',
+          overflow: 'auto',
+          background: '#17171c',
+        }}
+      >
+        {backTestResult && modalOpen && (
+          <Result backTestResult={backTestResult} index={index} />
+        )}
+      </Modal>
+    </Flex>
+  );
+};
 
 const BackTestResult = () => {
-  const { backTestResult } = useBackTestStore();
-  console.log(backTestResult);
-  const { formatTime, formatNumber } = useIntl();
-  const { days, hours, minutes } = useGetTime({
-    time: backTestResult?.totalDuration,
-  });
-  const backTestResults = [
-    {
-      title: 'Start Time',
-      value: backTestResult.startTime
-        ? formatTime(Number(backTestResult.startTime), formatTimeOption)
-        : '--',
-    },
-    {
-      title: 'End Time',
-      value: backTestResult.endTime
-        ? formatTime(Number(backTestResult.endTime), formatTimeOption)
-        : '--',
-    },
-    {
-      title: 'Initial Capital',
-      value: backTestResult.initailCaptial
-        ? formatNumber(backTestResult.initailCaptial, formatCurrencyOption)
-        : '--',
-    },
-    {
-      title: 'Final Capital',
-      value: backTestResult.capital
-        ? formatNumber(backTestResult.capital, formatCurrencyOption)
-        : '--',
-    },
-    {
-      title: 'Total Profit',
-      value: backTestResult.totalProfit
-        ? formatNumber(backTestResult.totalProfit, formatCurrencyOption)
-        : '--',
-      ...(backTestResult.totalProfit
-        ? {
-            color: Number(backTestResult.totalProfit) > 0 ? 'green' : 'red',
-          }
-        : {}),
-    },
-    {
-      title: 'Profit Rate',
-      value: backTestResult.profitRate
-        ? formatNumber(backTestResult.profitRate, formatPercentOption)
-        : '--',
-      ...(backTestResult.profitRate
-        ? {
-            color: Number(backTestResult.profitRate) > 0 ? 'green' : 'red',
-          }
-        : {}),
-    },
-    {
-      title: 'Total Duration',
-      value:
-        days || hours || minutes
-          ? `${days} days ${hours} hours ${minutes} minutes`
-          : '--',
-    },
-    {
-      title: 'Max Drawdown',
-      value: backTestResult.totalMaxDrawdown
-        ? Number(backTestResult.totalMaxDrawdown).toFixed(2) + '%'
-        : '--',
-      ...(backTestResult.totalMaxDrawdown
-        ? {
-            color:
-              Number(backTestResult.totalMaxDrawdown) > 0 ? 'green' : 'red',
-          }
-        : {}),
-    },
-    {
-      title: 'Annualized Return',
-      value: backTestResult.annualizedReturn
-        ? formatNumber(backTestResult.annualizedReturn, formatPercentOption)
-        : '--',
-      ...(backTestResult.annualizedReturn
-        ? {
-            color:
-              Number(backTestResult.annualizedReturn) > 0 ? 'green' : 'red',
-          }
-        : {}),
-    },
-  ];
-  return (
-    <Flex flexDirection="column" gap="2" flex="1" p="2" bg="darkTheme.800">
-      <Heading as="h4">Back Test Result</Heading>
-      <Divider />
+  const backTestResults = useLiveQuery(() => db.backtestResult.toArray());
 
-      <Flex flex="1" flexDirection="column" gap="6">
-        {backTestResults.map((result) => (
-          <Flex key={result.title} flexDirection="column" gap="2">
-            <Text>{result.title}</Text>
-            <Text color={result.color ?? 'neutral.400'}>{result.value}</Text>
-          </Flex>
-        ))}
-      </Flex>
-      <ResultChart />
+  console.log(backTestResults);
+  return (
+    <Flex
+      vertical
+      gap="small"
+      flex="1"
+      style={{
+        padding: '8px',
+        background: '#17171c',
+      }}
+    >
+      <Title level={4}>Back Test Result</Title>
+      <Divider />
+      {backTestResults?.map((backTestResult, index) => {
+        return (
+          <BackTestResultPanel
+            key={index}
+            backTestResult={backTestResult}
+            index={index}
+          />
+        );
+      })}
     </Flex>
   );
 };

@@ -1,15 +1,7 @@
 import {
-  Box,
-  Divider,
-  Flex,
-  Heading,
-  Tooltip,
-  useRadioGroup,
-} from '@chakra-ui/react';
-import {
-  Dispatch,
-  SetStateAction,
+  forwardRef,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -25,6 +17,7 @@ import {
   IChartApi,
   ISeriesApi,
   LogicalRange,
+  MouseEventParams,
   SeriesOptionsCommon,
   SeriesType,
   Time,
@@ -32,9 +25,10 @@ import {
 } from 'lightweight-charts';
 import useGetCandles from ' /hooks/use-get-candles';
 import { useIndicatorStore } from '../store/indicator-store';
-import { RadioToggle } from ' /components/common';
 import { getIndicatorData } from ' /application/indicator';
 import IndicatorChart from './indicator-chart';
+import { Flex, Title, Tooltip, Divider, Text, Segmented } from ' /styled-antd';
+import { paramsSetting } from '../store/constants';
 
 let candleSeries: ISeriesApi<
   'Candlestick',
@@ -77,60 +71,77 @@ export const timeFormatOptions: Record<string, FormatOptions> = {
   '1w': monthTimeFormatOptions,
 };
 
-const Chart = ({
-  symbol,
-  timeframe,
-  setTimeframe,
-}: {
-  symbol: string;
-  timeframe: string;
-  setTimeframe: Dispatch<SetStateAction<string>>;
-}) => {
+const Chart = forwardRef(function Chart(
+  {
+    symbol,
+  }: {
+    symbol: string;
+  },
+  ref,
+) {
+  const timeframeTourRef = useRef<HTMLElement>(null);
+  useImperativeHandle(ref, () => ({
+    getTimeframeTourRef: () => {
+      return timeframeTourRef.current;
+    },
+  }));
+
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const { allIndicator } = useIndicatorStore();
+  const { allIndicator, timeframe, changeTimeframe } = useIndicatorStore();
   const indicatorsArr = Object.values(allIndicator);
+  const nonPriceRelatedIndicators = indicatorsArr.filter((indicator) => {
+    return indicator.indicators.every(
+      (indicator) =>
+        !indicator.params?.isPriceRelated && indicator.isShowInChart,
+    );
+  });
+  const priceRelatedIndicators = indicatorsArr.filter((indicator) => {
+    return indicator.indicators.some(
+      (indicator) => indicator.params?.isPriceRelated,
+    );
+  });
+
   const options = Object.keys(timeFormatOptions).map((key) => ({
     value: key,
     label: key,
   }));
 
   const [logicalRange, setLogicalRange] = useState<LogicalRange | null>(null);
+  const [dataPoint, setDataPoint] = useState<{
+    time: Time;
+    value: number;
+  }>();
 
   const [page, setPage] = useState<number>(1);
-
   const timeframeIndicator = useMemo(() => {
     return indicatorsArr.find((indicator) => indicator.timeframe);
   }, [indicatorsArr]);
-  //
-  //
-  //
-  // radio group
-  const radioGroupProps = useRadioGroup({
-    defaultValue: timeframe,
-    onChange: (value: string) => {
-      if (
-        timeframeIndicator?.timeframe &&
-        !(timeframeIndicator.timeframe === value)
-      )
-        return;
-      setPage(1); //after onchange, reset page to 1 but setpage is too slow
-      setTimeframe(value);
-    },
-  });
+
+  // const radioGroupProps = useRadioGroup({
+  //   defaultValue: timeframe,
+  //   onChange: (value: string) => {
+  //     if (
+  //       timeframeIndicator?.timeframe &&
+  //       !(timeframeIndicator.timeframe === value)
+  //     )
+  //       return;
+  //     setPage(1); //after onchange, reset page to 1 but setpage is too slow
+  //     setTimeframe(value);
+  //   },
+  // });
 
   useEffect(() => {
     if (!timeframeIndicator?.timeframe) return;
-    radioGroupProps.onChange(timeframeIndicator?.timeframe);
+    changeTimeframe(timeframeIndicator?.timeframe);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeframeIndicator, radioGroupProps.value]);
+  }, [timeframeIndicator]);
   //
   //
   //
   // get candles
   const { data } = useGetCandles({
     symbol,
-    interval:
-      timeframeIndicator?.timeframe ?? (radioGroupProps.value as string),
+    interval: timeframeIndicator?.timeframe ?? timeframe,
     page,
   });
   //
@@ -215,12 +226,13 @@ const Chart = ({
       (document.querySelector('#chart') as HTMLElement) ?? '',
       {
         width: chartContainerRef.current.clientWidth - 32,
-        height: chartContainerRef.current.clientHeight - 32,
+        height: chartContainerRef.current.clientHeight - 8,
         layout: {
           background: {
             color: '#17171c',
           },
           textColor: '#727274',
+          attributionLogo: false,
         },
         grid: {
           vertLines: {
@@ -258,11 +270,21 @@ const Chart = ({
       }
     });
 
+    // To make crosshair always visible, set the position manually
+    chart.subscribeCrosshairMove((param: MouseEventParams<Time>) => {
+      setDataPoint(
+        param.seriesData.get(candleSeries) as {
+          time: Time;
+          value: number;
+        },
+      );
+    });
+
     const resizeChart = () => {
       if (!chart || !chartContainerRef.current) return;
       chart.applyOptions({
         width: chartContainerRef.current.clientWidth - 32,
-        height: chartContainerRef.current.clientHeight - 32,
+        height: chartContainerRef.current.clientHeight - 8,
       });
       // chart.timeScale().fitContent();
     };
@@ -282,32 +304,31 @@ const Chart = ({
 
   // render chart time scale
   useEffect(() => {
-    console.log(chart);
-    console.log(indicatorsArr);
     if (!chart) return;
-    if (indicatorsArr.length === 0) {
+    if (nonPriceRelatedIndicators.length === 0) {
       chart.applyOptions({
         timeScale: {
           barSpacing: 10,
           tickMarkFormatter: (time: number) => {
             return new Intl.DateTimeFormat('en-US', {
               timeZone: 'UTC',
-              ...timeFormatOptions[radioGroupProps.value as string],
+              ...timeFormatOptions[timeframe],
             }).format(time * 1000);
           },
           fixRightEdge: true,
           lockVisibleTimeRangeOnResize: true,
+          visible: true,
         },
       });
     }
-    if (indicatorsArr.length > 0) {
+    if (nonPriceRelatedIndicators.length > 0) {
       chart.applyOptions({
         timeScale: {
           visible: false,
         },
       });
     }
-  }, [indicatorsArr, radioGroupProps.value]);
+  }, [nonPriceRelatedIndicators, timeframe]);
   //
   //
   //
@@ -349,60 +370,146 @@ const Chart = ({
   // }, [backTestResult, timeframe]);
 
   return (
-    <Flex flexDirection="column" gap="2" flex="1" p="2" bg="darkTheme.800">
-      <Heading as="h4">Chart</Heading>
+    <Flex
+      vertical
+      gap="small"
+      style={{
+        padding: '8px',
+        background: '#17171c',
+      }}
+      flex="1"
+    >
+      <Title level={4}>Chart</Title>
       <Divider />
-      <Flex>
+      <Flex ref={timeframeTourRef}>
         <Tooltip
-          isDisabled={!timeframeIndicator?.timeframe}
-          shouldWrapChildren={true}
-          label={`${timeframeIndicator?.name} only support on ${timeframeIndicator?.timeframe} timeframe`}
+          open={!!timeframeIndicator?.timeframe}
+          title={`${timeframeIndicator?.name} only support on ${timeframeIndicator?.timeframe} timeframe`}
         >
-          <RadioToggle
-            variant="text"
+          <Segmented
             options={options}
-            {...radioGroupProps}
-            isDisabled={!!timeframeIndicator?.timeframe}
-            cursor={!timeframeIndicator?.timeframe ? 'pointer' : 'not-allowed'}
+            onChange={(value) => {
+              if (
+                timeframeIndicator?.timeframe &&
+                !(timeframeIndicator.timeframe === value)
+              )
+                return;
+              setPage(1); //after onchange, reset page to 1 but setpage is too slow
+              changeTimeframe(value as string);
+            }}
+            // value={timeframe}
           />
         </Tooltip>
       </Flex>
-      <Flex flexDirection="column">
-        <Box
-          w="full"
-          minW="300px"
-          ref={chartContainerRef}
-          position="relative"
-          p="4"
-          h="500px"
-          // h="50vh"
-          minH="400px"
+      <Flex vertical>
+        <Text
+          style={{
+            fontSize: '10px',
+          }}
         >
-          <Box position="absolute" w="full" h="full" id="chart" />
-        </Box>
-        {indicatorsArr.length > 0 &&
-          data?.candles &&
+          {priceRelatedIndicators?.length > 0 &&
+            priceRelatedIndicators
+              ?.flatMap((i) => i.indicators)
+              .flatMap((i) => {
+                const displayName = i.displayName || i.name;
+                let params = '';
+                Object.entries(i.params).forEach(([key, value]) => {
+                  if (!paramsSetting.includes(key)) return;
+                  if (params === '') {
+                    params += ` (${value}`;
+                  } else {
+                    params += `, ${value}`;
+                  }
+                });
+                params += `)`;
+
+                return displayName + params;
+              })
+              .join(', ')}
+        </Text>
+        <Flex
+          style={{
+            position: 'relative',
+            width: '100%',
+            minWidth: '300px',
+            padding: '4px',
+            height: '450px',
+            minHeight: '400px',
+          }}
+          ref={chartContainerRef}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              width: '100%',
+              height: '100%',
+            }}
+            id="chart"
+          />
+        </Flex>
+        {nonPriceRelatedIndicators.length > 0 &&
           chart &&
           logicalRange &&
-          indicatorsArr.map((indicator, i) => {
+          nonPriceRelatedIndicators.map((indicator, i) => {
             const id = indicator.indicators.reduce((acc, cur) => {
               return acc + cur.id;
             }, '');
             return (
-              <IndicatorChart
-                id={id}
-                key={id}
-                indicator={indicator}
-                data={data}
-                timeframe={timeframe}
-                logicalRange={logicalRange}
-                showTimeScale={indicatorsArr.length === i + 1}
-              />
+              <Flex vertical key={id}>
+                <Text
+                  style={{
+                    fontSize: '10px',
+                  }}
+                >
+                  {indicator?.indicators
+                    ?.map((i) => {
+                      const displayName = i.displayName || i.name;
+                      let params = '';
+                      Object.entries(i.params).forEach(([key, value]) => {
+                        if (!paramsSetting.includes(key)) return;
+                        if (params === '') {
+                          params += ` (${value}`;
+                        } else {
+                          params += `, ${value}`;
+                        }
+                      });
+                      params += `)`;
+
+                      return displayName + params;
+                    })
+                    .join(', ')}
+                </Text>
+                {data?.candles ? (
+                  <IndicatorChart
+                    id={id}
+                    indicator={indicator}
+                    data={data}
+                    timeframe={timeframe}
+                    logicalRange={logicalRange}
+                    dataPoint={dataPoint}
+                    showTimeScaleId={
+                      nonPriceRelatedIndicators.length === i + 1 ? id : ''
+                    }
+                  />
+                ) : (
+                  <div
+                    key={i}
+                    style={{
+                      width: '100%',
+                      height: '100px',
+                      minHeight: '100px',
+                      position: 'relative',
+                    }}
+                  />
+                )}
+              </Flex>
             );
           })}
       </Flex>
     </Flex>
   );
-};
+});
 
 export default Chart;

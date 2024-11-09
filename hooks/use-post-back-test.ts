@@ -1,39 +1,50 @@
-import {
-  BackTestSignal,
-  useBackTestStore,
-} from ' /components/back-test/store/back-test-store';
+import { BackTestSignal } from ' /components/back-test/store/back-test-store';
 import { useIndicatorStore } from ' /components/back-test/store/indicator-store';
 import { IndicatorExtended } from ' /components/back-test/store/indicator.type';
 import { postBackTest } from ' /service/back-test';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, UseMutationOptions } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 import getCurrentIndicatorFromSignal from './get-current-indicator-from-signal';
+import { db } from ' /app/indexDB';
 
-const usePostBackTest = ({
-  symbol,
-  interval,
-  start,
-  end,
-  capital,
-  takeProfit,
-  stopLoss,
-  signals,
-  ...options
-}: {
-  symbol: string;
-  interval: string;
-  start: string;
-  end: string;
-  capital: number;
-  takeProfit?: number;
-  stopLoss?: number;
-  signals: BackTestSignal[];
-  options?: Record<string, string>;
-}) => {
+type UsePostBackTestProps = UseMutationOptions<
+  void,
+  Error,
+  {
+    symbol: string;
+    interval: string;
+    start: string;
+    end: string;
+    capital: number;
+    takeProfit?: number;
+    stopLoss?: number;
+    signals: BackTestSignal[];
+  }
+>;
+
+const usePostBackTest = (options?: UsePostBackTestProps) => {
   const { allIndicator } = useIndicatorStore();
-  const { addBackTestResult } = useBackTestStore();
+
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({
+      symbol,
+      interval,
+      start,
+      end,
+      capital,
+      takeProfit,
+      stopLoss,
+      signals,
+    }: {
+      symbol: string;
+      interval: string;
+      start: string;
+      end: string;
+      capital: number;
+      takeProfit?: number;
+      stopLoss?: number;
+      signals: BackTestSignal[];
+    }) => {
       const { buySignals, sellSignals } = convertSignals(signals, allIndicator);
 
       const response = await postBackTest({
@@ -48,7 +59,24 @@ const usePostBackTest = ({
         sellSignals,
       });
       const result = await response.json();
-      addBackTestResult({ ...result, allIndicator, signals });
+      db.backtestResult.add({
+        name: 'Untitled',
+        annualizedReturn: result.annualizedReturn,
+        totalMaxDrawdown: result.totalMaxDrawdown,
+        totalDuration: result.totalDuration,
+        totalProfit: result.totalProfit,
+        profitRate: result.profitRate,
+        initialCapital: capital,
+        capital: capital + result.totalProfit,
+        buySellCandlesPairs: result.buySellCandlesPairs,
+        candles: result.candles,
+        startTime: result.startTime,
+        endTime: result.endTime,
+        allIndicator,
+        signals,
+        timeframe: interval,
+        createdAt: new Date().toLocaleString(),
+      });
     },
     ...options,
   });
@@ -111,6 +139,7 @@ function convertSetting(
       previous: 'previous',
       max: baseIndicator?.params.max,
       min: baseIndicator?.params.min,
+      price: 'price',
     };
     const upperBound = {
       id: uuidv4(),

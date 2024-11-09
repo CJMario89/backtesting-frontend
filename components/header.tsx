@@ -1,10 +1,9 @@
 'use client';
-import { Button, Flex, Heading, Text } from '@chakra-ui/react';
-import IconGoogle from './icon/google';
 import useAuth from ' /hooks/use-auth';
-import Link from 'next/link';
 import useSignOut from ' /hooks/use-sign-out';
 import useGetSubscriptionLink from ' /hooks/use-get-subscription-links';
+import { Button, Flex, Text, Title } from ' /styled-antd';
+import { GoogleOutlined } from '@ant-design/icons';
 
 const Header = () => {
   const { name } = useAuth();
@@ -14,20 +13,18 @@ const Header = () => {
   const { mutate: signout } = useSignOut();
   return (
     <Flex
-      w="full"
-      bgColor="darkTheme.900"
-      h="100px"
-      alignItems="center"
-      justifyContent="space-between"
-      p="4"
-      px="8"
+      align="center"
+      justify="space-between"
+      style={{
+        width: '100%',
+        height: '64px',
+        padding: '0px 16px',
+      }}
     >
-      <Heading as="h1" color="neutral.50">
-        BackTest
-      </Heading>
+      <Title level={2}>BackTest</Title>
       <Button
-        isDisabled={!name}
-        isLoading={isGettingSubscription}
+        disabled={!name}
+        loading={isGettingSubscription}
         onClick={async () => {
           const data = await mutateAsync();
           window.open(data, '_blank');
@@ -36,15 +33,9 @@ const Header = () => {
         Subscribe
       </Button>
       {!!name && (
-        <Flex alignItems="center">
-          <Text color="neutral.50" mr="4">
-            {name}
-          </Text>
+        <Flex align="center" gap="small">
+          <Text>{name}</Text>
           <Button
-            size="md"
-            p="5"
-            colorScheme="primary"
-            variant="outline"
             onClick={() => {
               signout();
             }}
@@ -54,16 +45,15 @@ const Header = () => {
         </Flex>
       )}
       {!name && (
-        <Button
-          size="md"
-          p="5"
-          colorScheme="primary"
-          variant="outline"
-          as={Link}
-          href={'http://localhost:3000/auth/google'}
-        >
-          <IconGoogle boxSize="6" />
-          <Text ml="2">Sign In With Google</Text>
+        <Button href={'http://localhost:3000/auth/google'}>
+          <GoogleOutlined />
+          <Text
+            style={{
+              marginLeft: '8px',
+            }}
+          >
+            Sign In
+          </Text>
         </Button>
       )}
     </Flex>

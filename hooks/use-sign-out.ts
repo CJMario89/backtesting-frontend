@@ -8,9 +8,7 @@ const useSignOut = () => {
   return useMutation({
     mutationFn: async () => {
       const response = await googleLogout();
-      console.log(response);
       const data = await response.json();
-      console.log(data);
       return data;
     },
     onSuccess: () => {
