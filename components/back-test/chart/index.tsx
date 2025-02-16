@@ -397,7 +397,7 @@ const Chart = forwardRef(function Chart(
               setPage(1); //after onchange, reset page to 1 but setpage is too slow
               changeTimeframe(value as string);
             }}
-            // value={timeframe}
+            value={timeframe}
           />
         </Tooltip>
       </Flex>
