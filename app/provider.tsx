@@ -1,11 +1,7 @@
 'use client';
 
 import { AntdRegistry } from '@ant-design/nextjs-registry';
-import {
-  PayPalHostedFieldsProvider,
-  PayPalScriptProvider,
-  ReactPayPalScriptOptions,
-} from '@paypal/react-paypal-js';
+// import { ReactPayPalScriptOptions } from '@paypal/react-paypal-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider, theme } from 'antd';
 import React from 'react';
@@ -21,12 +17,12 @@ const queryClient = new QueryClient({
   },
 });
 
-const initialOptions = {
-  clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID,
-  currency: 'USD',
-  vault: true,
-  intent: 'subscription',
-} as ReactPayPalScriptOptions;
+// const initialOptions = {
+//   clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID,
+//   currency: 'USD',
+//   vault: true,
+//   intent: 'subscription',
+// } as ReactPayPalScriptOptions;
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

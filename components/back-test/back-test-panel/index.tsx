@@ -146,6 +146,7 @@ const Signals = ({ action }: { action: 'buy' | 'sell' }) => {
   );
 };
 
+// eslint-disable-next-line no-empty-pattern
 const BackTestPanel = forwardRef(function BackTestPanel({}, ref) {
   const addSignalTourRef = useRef<HTMLElement>(null);
   const settingTourRef = useRef<HTMLElement>(null);
