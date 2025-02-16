@@ -45,7 +45,7 @@ const Header = () => {
         </Flex>
       )}
       {!name && (
-        <Button href={'http://localhost:3000/auth/google'}>
+        <Button href={`${process.env.NEXT_PUBLIC_BACKEND_URL}auth/google`}>
           <GoogleOutlined />
           <Text
             style={{

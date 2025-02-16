@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 export const postRequest = (url: string, body: Record<string, string>) => {
   return fetch(`${API_URL}${url}`, {
     method: 'POST',
